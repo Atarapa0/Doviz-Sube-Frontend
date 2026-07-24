@@ -3,8 +3,8 @@ export default function Sidebar() {
     <aside style={{ display: "flex", flexDirection: "column", width: "260px", minHeight: "100vh", backgroundColor: "#f4f6f8", borderRight: "1px solid #e0e0e0", padding: "20px" }}>
       
       <div style={{ marginBottom: "30px" }}>
-        <h2 style={{ margin: 0, color: "#0047b3" }}>FinOps Global</h2>
-        <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>TREASURY DEPT</p>
+        <h2 style={{ margin: 0, color: "#0047b3" }}>xxxxx Bankası</h2>
+        <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>xxxx Şube</p>
       </div>
 
       <nav style={{ flex: 1 }}>

@@ -23,7 +23,7 @@ export default function Header(): JSX.Element {
         <span style={{ cursor: "pointer" }}>⚙️</span>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
           <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#ccc" }}></div>
-          <span style={{ fontSize: "14px", fontWeight: "bold" }}>Ahmet Yılmaz</span>
+          <span style={{ fontSize: "14px", fontWeight: "bold" }}>Furkan Erdoğan</span>
         </div>
       </div>
     </header>

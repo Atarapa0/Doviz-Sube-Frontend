@@ -5,19 +5,30 @@ import Sidebar from "@/app/companents/Sidebar";
 
 import { FormEvent, useEffect, useState } from "react";
 
+type Doviz = {
+  id: number;
+  kod: string;
+  name: string;
+  birim: number;
+};
+
 
 export default function Home() {
-  const [dovizKurlari, setDovizKurlari] = useState<Record<string, unknown>>({});
+  const [dovizler, setDovizler] = useState<Doviz[]>([]);
   const [secilenDoviz, setSecilenDoviz] = useState("");
+  const [islemKaynagi, setIslemKaynagi] = useState("");
+  const [odemeSekli, setOdemeSekli] = useState("");
   const [miktar, setMiktar] = useState("");
   const [islemTipi, setIslemTipi] = useState("");
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [hata, setHata] = useState("");
+  const [islemSonucu, setIslemSonucu] = useState({ kaynak: "", sonuc: "" });
 
   useEffect(() => {
-    async function kurVerileriniGetir() {
+    async function dovizleriGetir() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-        const response = await fetch(`${apiUrl}/api/v1/dovizleri-getir`);
+        setHata("");
+        const response = await fetch("/api/dovizler");
 
         if (!response.ok) {
           throw new Error(`API isteği başarısız: ${response.status}`);
@@ -25,17 +36,20 @@ export default function Home() {
 
         const data: unknown = await response.json();
 
-        if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-          setDovizKurlari(data as Record<string, unknown>);
+        if (!Array.isArray(data)) {
+          throw new Error("API beklenen döviz listesini döndürmedi.");
         }
+
+        setDovizler(data as Doviz[]);
       } catch (error) {
-        console.error("Döviz kurları alınamadı:", error);
+        console.error("Dövizler alınamadı:", error);
+        setHata("Dövizler getirilemedi. API'nin çalıştığını kontrol edin.");
       } finally {
         setYukleniyor(false);
       }
     }
 
-    void kurVerileriniGetir();
+    void dovizleriGetir();
   }, []);
 
   function formTemizle() {
@@ -46,12 +60,7 @@ export default function Home() {
 
   function islemYap(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    const veri = { secilenDoviz, miktar: Number(miktar), islemTipi };
-    console.log("Backend'e gidecek veri:", veri);
-
-    alert("İşlem onaylandı!");
-    formTemizle();
+    alert("İşlem bilgileri hazır.");
   }
 
   return (
@@ -66,40 +75,89 @@ export default function Home() {
         {/* Üst Bilgi */}
         <Header />
         <main style={{ padding: "30px" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "20px" }}>Döviz Alış/Satış/Arbitraj</h2>
 
-          {yukleniyor ? (
-            <p>Kurlar yükleniyor...</p>
-          ) : (
-            <form onSubmit={islemYap} style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", maxWidth: "600px" }}>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Döviz Seçimi:</label>
-                <select value={secilenDoviz} onChange={(e) => setSecilenDoviz(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
-                  <option value="">Seçiniz</option>
-                  {Object.keys(dovizKurlari).map((doviz) => (
-                    <option key={doviz} value={doviz}>{doviz}</option>
-                  ))}
-                </select>
+          {yukleniyor && <p>Dövizler yükleniyor...</p>}
+          {hata && <p style={{ color: "#b42318", fontWeight: "bold" }}>{hata}</p>}
+
+          {!yukleniyor && !hata && (
+            <form onSubmit={islemYap} style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                <h1 style={{ marginTop: 0, marginBottom: "20px" ,fontWeight: "bold",color: "#5a62d4" ,fontSize: "24px" }}>İşlem Bilgisi</h1>
+              </div>
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Döviz Cinsi:</label>
+                  <select value={secilenDoviz} onChange={(e) => setSecilenDoviz(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                    <option value="">Seçiniz</option>
+                    {dovizler.map((doviz) => (
+                      <option key={doviz.id} value={doviz.kod}>
+                        {doviz.kod} - {doviz.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Tipi:</label>
+                  <input type="radio" id="doviz-alis" name="islemTipi" value="alis" checked={islemTipi === "alis"} onChange={(e) => setIslemTipi(e.target.value)} required style={{ margin: "10px" }} />
+                  <label htmlFor="doviz-alis">Döviz Alış</label>
+
+                  <input type="radio" id="doviz-satis" name="islemTipi" value="satis" checked={islemTipi === "satis"} onChange={(e) => setIslemTipi(e.target.value)} style={{ margin: "10px" }} />
+                  <label htmlFor="doviz-satis">Döviz Satış</label>
+                  
+                </div>
+                
+              </div>
+              <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "nowrap" }}>
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Kaynağı:</label>
+                  <select value={islemKaynagi} onChange={(e) => setIslemKaynagi(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                    <option value="">Seçiniz</option>
+                    <option value="">Seçiniz</option>
+                    <option value="tl-hesaptan">TL Hesaptan</option>
+                    <option value="yp-hesaptan">YP Hesaptan</option>
+                    <option value="nakit">Nakit</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Alınacak Döviz Cinsi:</label>
+                  <select value={secilenDoviz} onChange={(e) => setSecilenDoviz(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                    <option value="">Seçiniz</option>
+                    {dovizler.map((doviz) => (
+                      <option key={doviz.id} value={doviz.kod}>
+                        {doviz.kod} - {doviz.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Döviz Cinsi:</label>
+                  <select value={secilenDoviz} onChange={(e) => setSecilenDoviz(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                    <option value="">Seçiniz</option>
+                    {dovizler.map((doviz) => (
+                      <option key={doviz.id} value={doviz.kod}>
+                        {doviz.kod} - {doviz.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Alınacak Miktar:</label>
+                  <input type="number" value={miktar} onChange={(e) => setMiktar(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
+                </div>
+
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Miktar:</label>
+                  <input type="number" value={miktar} onChange={(e) => setMiktar(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
+                </div>
+
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Miktar:</label>
-                <input type="number" value={miktar} onChange={(e) => setMiktar(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
-              </div>
-
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Tipi:</label>
-                <select value={islemTipi} onChange={(e) => setIslemTipi(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
-                  <option value="">Seçiniz</option>
-                  <option value="alis">Alış</option>
-                  <option value="satis">Satış</option>
-                </select>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
                 <button type="submit" style={{ padding: "10px 20px", backgroundColor: "#0047b3", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
-                  İşlemi Gerçekleştir
+                  İşlemi   Gerçekleştir
                 </button>
                 <button type="button" onClick={formTemizle} style={{ padding: "10px 20px", backgroundColor: "#f0f0f0", color: "#333", border: "none", borderRadius: "4px", cursor: "pointer" }}>
                   İptal
@@ -112,3 +170,7 @@ export default function Home() {
     </div>
   );
 }
+
+
+
+//Todo: Axios Kütüphanesi ile API çağrısı yapıp, dövizleri çekmek ve formu doldurmak. Form gönderildiğinde, seçilen döviz, miktar ve işlem tipine göre bir işlem gerçekleştirmek. İşlem sonucunu kullanıcıya göstermek.
