@@ -5,7 +5,15 @@ import Sidebar from "@/app/companents/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
-
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { CSSProperties, FormEvent, useEffect, useState } from "react";
 
 type Doviz = {
@@ -68,6 +76,7 @@ export default function Home() {
   const [dovizler, setDovizler] = useState<Doviz[]>([]);
   const [kurlar, setKurlar] = useState<Kur[]>([]);
   const [kurTarihi, setKurTarihi] = useState("");
+  const [islemReferansi, setIslemReferansi] = useState("");
   const [secilenDoviz, setSecilenDoviz] = useState("");
   const [alinacakDoviz, setAlinacakDoviz] = useState("");
   const [odenecekDoviz, setOdenecekDoviz] = useState("");
@@ -84,11 +93,7 @@ export default function Home() {
   const [islemSonucu, setIslemSonucu] = useState({ kaynak: "", sonuc: "" });
 
   useEffect(() => {
-    void dovizVeKurlariGetir();
-  }, []);
-
-  
-  async function dovizVeKurlariGetir() {
+    async function dovizVeKurlariGetir() {
       try {
         setHata("");
         const [dovizResponse, kurResponse] = await Promise.all([
@@ -128,6 +133,9 @@ export default function Home() {
         setYukleniyor(false);
       }
     }
+
+    void dovizVeKurlariGetir();
+  }, []);
 
   function karsiligiGuncelle(
     kaynak: "alinacak" | "odenecek",
@@ -187,6 +195,7 @@ export default function Home() {
     setMiktar("");
     setAlinacakMiktar("");
     setOdenecekMiktar("");
+    setIslemReferansi("");
     setHesaplamaHatasi("");
     setIslemTipi("");
     setSecilenDoviz("");
@@ -218,7 +227,7 @@ export default function Home() {
           {hata && <p style={{ color: "#b42318", fontWeight: "bold" }}>{hata}</p>}
 
           {!yukleniyor && !hata && (
-            <form onSubmit={islemYap} style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+            <form style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", flexDirection: "row" }}>
                 <h1 style={{ marginTop: 0, marginBottom: "20px", fontWeight: "bold", color: "#5a62d4", fontSize: "24px" }}>İşlem Bilgisi</h1>
                 <span style={{ marginLeft: "auto", color: "#667085", fontSize: "12px" }}>Kur tarihi: {kurTarihi}</span>
@@ -228,15 +237,14 @@ export default function Home() {
 
               <div style={{ display: "flex", alignItems: "flex-end", gap: "20px", flexWrap: "wrap", marginBottom: "28px" }}>
                 <div style={{ flex: "0 0 280px" }}>
-                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Döviz Cinsi:</label>
-                  <select value={odenecekDoviz} onChange={(e) => odenecekDoviziDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
-                    <option value="">Seçiniz</option>
-                    {dovizler.map((doviz) => (
-                      <option key={doviz.id} value={doviz.kod}>
-                        {doviz.kod} - {doviz.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="islem-referansi" style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Referansı:</label>
+                  <input
+                    id="islem-referansi"
+                    type="text"
+                    value={islemReferansi}
+                    onChange={(e) => setIslemReferansi(e.target.value)}
+                    style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
+                  />
                 </div>
 
                 <Tabs value={islemTipi} onValueChange={setIslemTipi} className="w-full md:w-auto">
@@ -289,6 +297,18 @@ export default function Home() {
                   </select>
                 </div>
 
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Döviz Cinsi:</label>
+                  <select value={odenecekDoviz} onChange={(e) => odenecekDoviziDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                    <option value="">Seçiniz</option>
+                    {dovizler.map((doviz) => (
+                      <option key={doviz.id} value={doviz.kod}>
+                        {doviz.kod} - {doviz.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
 
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Alınacak Miktar:</label>
@@ -317,13 +337,185 @@ export default function Home() {
                 </button>
               </div>
             </form>
+
+          )}
+          {yukleniyor && <p>Dövizler yükleniyor...</p>}
+          {hata && <p style={{ color: "#b42318", fontWeight: "bold" }}>{hata}</p>}
+
+          {!yukleniyor && !hata && (
+            <form onSubmit={islemYap} style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
+              <div className="ads" style={{ display: "flex", flexDirection: "row", gap: "20px" }}>
+                <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", width: "40%", flexDirection: "column", gap: "20px" }}>
+                  <h1 style={{ fontWeight: "bold", color: "#0047b3" }}>Kur Bilgisi</h1>
+                  <div style={{ display: "flex", flexDirection: "row", gap: "10px", borderRadius: "4px", padding: "10px" }}>
+                    <h3 style={{ width: "50%" }}>Kur Alış</h3>
+                    <h3 style={{ width: "50%" }}>Kur Satış</h3>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "row", gap: "10px", borderRadius: "4px", padding: "10px" }}>
+
+                    <input
+                      type="text"
+                      readOnly
+                      value={
+                        alinacakDoviz && kurlar.length > 0
+                          ? `${alinacakDoviz} Alış: ${alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizAlis?.toFixed(4) || '—'}`
+                          : ''
+                      }
+                      style={{ width: "50%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                    />
+
+                    <input
+                      type="text"
+                      readOnly
+                      value={
+                        odenecekDoviz && kurlar.length > 0
+                          ? `${odenecekDoviz} Satış: ${odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizSatis?.toFixed(4) || '—'}`
+                          : ''
+                      }
+                      style={{ width: "50%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                    />
+                  </div>
+                  <div className="p-8">
+                    <Table>
+                      <TableCaption>Güncel Döviz Kurları</TableCaption>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Para Birimi</TableHead>
+                          <TableHead>Alış</TableHead>
+                          <TableHead>Satış</TableHead>
+                          <TableHead className="text-right">Durum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {alinacakDoviz && kurlar.length > 0 && (
+                          <TableRow>
+                            <TableCell className="font-medium">{alinacakDoviz}</TableCell>
+                            <TableCell>
+                              {alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizAlis?.toFixed(4) || '—'}
+                            </TableCell>
+                            <TableCell>
+                              {alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizSatis?.toFixed(4) || '—'}
+                            </TableCell>
+                            <TableCell className="text-right text-green-500">Stabil</TableCell>
+                          </TableRow>
+                        )}
+                        {odenecekDoviz && kurlar.length > 0 && alinacakDoviz !== odenecekDoviz && (
+                          <TableRow>
+                            <TableCell className="font-medium">{odenecekDoviz}</TableCell>
+                            <TableCell>
+                              {odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizAlis?.toFixed(4) || '—'}
+                            </TableCell>
+                            <TableCell>
+                              {odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizSatis?.toFixed(4) || '—'}
+                            </TableCell>
+                            <TableCell className="text-right text-red-500">Stabil</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
+                  <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", height: "100%" }}>
+                    <h1>Borclu Bilgisi</h1>
+                    <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginTop: "10px" }}>
+                      <div style={{ width: "20%" }}>
+                        <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
+                        <input
+                          type="text" readOnly
+                          style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                        />
+                      </div>
+                      <div style={{ width: "85%" }}>
+                        <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Hesap Adı</label>
+                        <input
+                          type="text" readOnly
+                          style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "row", marginTop: "10px" }}>
+                      <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginTop: "10px" }}>
+                        <div style={{ width: "30%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                        <div style={{ width: "10%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Ek No</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                        <div style={{ width: "60%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Müsteri Adı Soyadı</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+
+                  </div>
+                  <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", height: "100%" }}>
+
+                    <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginTop: "10px" }}>
+                      <div style={{ width: "20%" }}>
+                        <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Alacaklı Hesap</label>
+                        <input
+                          type="text" readOnly
+                          style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                        />
+                      </div>
+                      <div style={{ width: "85%" }}>
+                        <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Hesap Adı</label>
+                        <input
+                          type="text" readOnly
+                          style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "row", marginTop: "10px" }}>
+                      <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginTop: "10px" }}>
+                        <div style={{ width: "30%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                        <div style={{ width: "10%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Ek No</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                        <div style={{ width: "60%" }}>
+                          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Müsteri Adı Soyadı</label>
+                          <input
+                            type="text" readOnly
+                            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+
+
+                  </div>
+                </div>
+              </div>
+            </form>
+
           )}
         </main>
       </div>
     </SidebarProvider>
   );
 }
-
-
-
-//Todo: Axios Kütüphanesi ile API çağrısı yapıp, dövizleri çekmek ve formu doldurmak. Form gönderildiğinde, seçilen döviz, miktar ve işlem tipine göre bir işlem gerçekleştirmek. İşlem sonucunu kullanıcıya göstermek.
