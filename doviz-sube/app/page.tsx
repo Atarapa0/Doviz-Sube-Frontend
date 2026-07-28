@@ -2,6 +2,7 @@
 
 import Header from "@/app/companents/Header";
 import Sidebar from "@/app/companents/Sidebar";
+import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
@@ -14,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CSSProperties, FormEvent, useEffect, useState } from "react";
+import { CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
 
 type Doviz = {
   id: number;
@@ -163,15 +164,16 @@ export default function Home() {
   const [alacakliHesapId, setAlacakliHesapId] = useState("");
   const [alacakliEkNo, setAlacakliEkNo] = useState("");
   const [hesapAramaMesaji, setHesapAramaMesaji] = useState("");
+  const hesapAramaIdRef = useRef(0);
 
   useEffect(() => {
     async function dovizVeKurlariGetir() {
       try {
         setHata("");
         const [dovizResponse, kurResponse, musteriResponse] = await Promise.all([
-          fetch("/api/dovizler"),
-          fetch("/api/kurlar"),
-          fetch("/api/musteriler"),
+          fetch(NEXT_API_ENDPOINTS.dovizler),
+          fetch(NEXT_API_ENDPOINTS.kurlar),
+          fetch(NEXT_API_ENDPOINTS.musteriler),
         ]);
 
         if (!dovizResponse.ok || !kurResponse.ok || !musteriResponse.ok) {
@@ -201,44 +203,12 @@ export default function Home() {
         }
 
         const musteriListesi = musteriData as Musteri[];
-        const hesapGruplari = await Promise.all(
-          musteriListesi.map(async (musteri) => {
-            const response = await fetch(`/api/hesaplar/${musteri.id}`);
-
-            if (!response.ok) {
-              throw new Error(`${musteri.id} numaralı müşterinin hesapları alınamadı.`);
-            }
-
-            const data: unknown = await response.json();
-
-            if (
-              typeof data !== "object" ||
-              data === null ||
-              !Array.isArray((data as HesapResponse).hesaplar)
-            ) {
-              throw new Error(`${musteri.id} numaralı müşteri için hesap listesi geçersiz.`);
-            }
-
-            const hesapCevabi = data as HesapResponse;
-
-            return hesapCevabi.hesaplar.map((hesap) => ({
-              ...hesap,
-              hesapAnahtari: `${musteri.id}-${hesap.hesapEkNo}`,
-              musteriId: musteri.id,
-              musteriAdi: musteri.ad,
-              musteriSoyadi: musteri.soyad,
-              subeKodu: hesapCevabi.sube.kod,
-              subeAdi: hesapCevabi.sube.ad,
-            }));
-          }),
-        );
 
         const kurSonucu = kurData as KurResponse;
         setDovizler(dovizData as Doviz[]);
         setKurlar(kurSonucu.kurlar);
         setKurTarihi(kurSonucu.tarih);
         setTumMusteriler(musteriListesi);
-        setTumHesaplar(hesapGruplari.flat());
       } catch (error) {
         console.error("Döviz, kurlar veya müşteriler alınamadı:", error);
         setHata("Döviz, kur ve müşteri bilgileri getirilemedi. API'nin çalıştığını kontrol edin.");
@@ -304,15 +274,18 @@ export default function Home() {
     karsiligiGuncelle("odenecek", yeniMiktar);
   }
 
-  function hesapBilgisiGetir(girilenEkNo: string) {
-    setBorçluHesap(girilenEkNo);
+  async function hesapBilgisiGetir(girilenMusteriId: string) {
+    const aramaId = ++hesapAramaIdRef.current;
+
+    setBorçluHesap(girilenMusteriId);
     setSecilenEkNo("");
     setAlacakliHesapId("");
     setAlacakliEkNo("");
+    setEkNolariDropdown([]);
+    setHesaplar([]);
+    setTumHesaplar([]);
 
-    if (!girilenEkNo.trim()) {
-      setEkNolariDropdown([]);
-      setHesaplar([]);
+    if (!girilenMusteriId.trim()) {
       setSecilenMusteri("");
       setEkNo("");
       setMusteriAdi("");
@@ -322,32 +295,79 @@ export default function Home() {
       return;
     }
 
-    const arananEkNo = Number(girilenEkNo);
-    const eslesenHesaplar = tumHesaplar.filter(
-      (hesap) => hesap.hesapEkNo === arananEkNo,
-    );
+    const musteriId = Number(girilenMusteriId);
 
-    setEkNolariDropdown(eslesenHesaplar);
-
-    if (eslesenHesaplar.length === 0) {
+    if (!Number.isInteger(musteriId) || musteriId < 1) {
       setEkNo("");
       setMusteriAdi("");
       setSubeKodu("");
       setSubeAdi("");
-      setHesapAramaMesaji("Bu ek no ile eşleşen hesap bulunamadı.");
+      setSecilenMusteri("");
+      setHesapAramaMesaji("Müşteri ID pozitif bir tam sayı olmalıdır.");
       return;
     }
 
-    if (eslesenHesaplar.length === 1) {
-      hesapSec(eslesenHesaplar[0].hesapAnahtari);
-      return;
-    }
+    setHesapAramaMesaji("Müşteri bilgileri getiriliyor...");
 
-    setEkNo("");
-    setMusteriAdi("");
-    setHesapAramaMesaji(
-      "Bu ek no birden fazla müşteride bulundu. Dropdown'dan müşteriyi seçin.",
-    );
+    try {
+      const response = await fetch(
+        NEXT_API_ENDPOINTS.musteriHesaplari(musteriId),
+      );
+      const data: unknown = await response.json();
+
+      if (aramaId !== hesapAramaIdRef.current) return;
+
+      if (!response.ok) {
+        const mesaj =
+          typeof data === "object" && data !== null && "mesaj" in data
+            ? String(data.mesaj)
+            : "Müşteri bilgileri alınamadı.";
+        throw new Error(mesaj);
+      }
+
+      if (
+        typeof data !== "object" ||
+        data === null ||
+        !Array.isArray((data as HesapResponse).hesaplar)
+      ) {
+        throw new Error("Müşteri hesap cevabı beklenen formatta değil.");
+      }
+
+      const hesapCevabi = data as HesapResponse;
+      const musteriHesaplari: Hesap[] = hesapCevabi.hesaplar.map((hesap) => ({
+        ...hesap,
+        hesapAnahtari: `${hesapCevabi.id}-${hesap.hesapEkNo}`,
+        musteriId: hesapCevabi.id,
+        musteriAdi: hesapCevabi.ad,
+        musteriSoyadi: hesapCevabi.soyad,
+        subeKodu: hesapCevabi.sube.kod,
+        subeAdi: hesapCevabi.sube.ad,
+      }));
+
+      setSecilenMusteri(hesapCevabi.id.toString());
+      setTumHesaplar(musteriHesaplari);
+      setHesaplar(musteriHesaplari);
+      setEkNolariDropdown(musteriHesaplari);
+      setMusteriAdi(`${hesapCevabi.ad} ${hesapCevabi.soyad}`);
+      setSubeKodu(hesapCevabi.sube.kod);
+      setSubeAdi(hesapCevabi.sube.ad);
+      setHesapAramaMesaji(
+        musteriHesaplari.length > 0
+          ? ""
+          : "Bu müşteriye ait hesap bulunamadı.",
+      );
+    } catch (error) {
+      if (aramaId !== hesapAramaIdRef.current) return;
+
+      setSecilenMusteri("");
+      setEkNo("");
+      setMusteriAdi("");
+      setSubeKodu("");
+      setSubeAdi("");
+      setHesapAramaMesaji(
+        error instanceof Error ? error.message : "Müşteri bilgileri alınamadı.",
+      );
+    }
   }
 
   function hesapSec(hesapAnahtari: string) {
@@ -439,7 +459,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
   };
 
   try {
-    const response = await fetch("/api/doviz-cevir", {
+    const response = await fetch(NEXT_API_ENDPOINTS.dovizCevir, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -449,9 +469,11 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
     if (!response.ok) {
       const message =
-        typeof result === "object" && result !== null && "message" in result
-          ? String(result.message)
-          : "Döviz işlemi gerçekleştirilemedi.";
+        typeof result === "object" && result !== null && "mesaj" in result
+          ? String(result.mesaj)
+          : typeof result === "object" && result !== null && "message" in result
+            ? String(result.message)
+            : "Döviz işlemi gerçekleştirilemedi.";
       throw new Error(message);
     }
 
@@ -702,9 +724,9 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <input
                           type="text"
-                          placeholder="Ek No (örn: 5001)"
+                          placeholder="Müşteri ID (örn: 1)"
                           value={borçluHesap}
-                          onChange={(e) => hesapBilgisiGetir(e.target.value)}
+                          onChange={(e) => void hesapBilgisiGetir(e.target.value)}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
                         />
                       </div>

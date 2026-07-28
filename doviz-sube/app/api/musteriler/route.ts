@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { ApiServiceError, apiGet } from "@/lib/api-service";
+import { BACKEND_API_ENDPOINTS } from "@/constants/api-endpoints";
 
 export async function GET() {
   try {
-    const data = await apiGet<unknown>("/api/v1/musteriler");
+    const data = await apiGet<unknown>(BACKEND_API_ENDPOINTS.musteriler);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Müşteri API bağlantı hatası:", error);

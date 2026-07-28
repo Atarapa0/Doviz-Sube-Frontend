@@ -11,9 +11,14 @@ import {
 
 const menuItems = [
   "Dashboard",
-  "Transfers",
-  "Currency Exchange",
-  "Arbitrage",
+  "Döviz Alış / Satış",
+  "Döviz İşlem Geçmişi",
+  "Müşteriler",
+  "Yeni Müşteri",
+  "Hesap Açma",
+  "Hesap Hareketleri",
+  "Güncel Kurlar",
+  "Arbitraj",
 ];
 
 export default function Sidebar() {
@@ -34,7 +39,7 @@ export default function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {menuItems.map((item) => {
-                const isActive = item === "Currency Exchange";
+                const isActive = item === "Döviz Alış / Satış";
 
                 return (
                   <SidebarMenuItem key={item}>
