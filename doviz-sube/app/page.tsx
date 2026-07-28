@@ -34,27 +34,44 @@ type Musteri = {
   id: number;
   ad: string;
   soyad: string;
-  aktifMi?: boolean;
+  aktifMi: boolean;
+  sube: {
+    id: number;
+    kod: string;
+    ad: string;
+    aktifMi?: boolean;
+  };
+  hesapSayisi: number;
+  olusturmaTarihi: string;
+  guncellemeTarihi: string;
 };
 
 type ApiHesap = {
-  id: number;
-  ekNo: number;
+  hesapEkNo: number;
   dovizId: number;
   dovizKodu: string;
   dovizAdi: string;
   bakiye: number;
   aktifMi: boolean;
+  olusturmaTarihi: string;
+  guncellemeTarihi: string;
 };
 
 type Hesap = ApiHesap & {
+  hesapAnahtari: string;
   musteriId: number;
   musteriAdi: string;
   musteriSoyadi: string;
+  subeKodu: string;
+  subeAdi: string;
 };
 
 type HesapResponse = {
-  musteri: Musteri;
+  id: number;
+  ad: string;
+  soyad: string;
+  aktifMi: boolean;
+  sube: Musteri["sube"];
   hesaplar: ApiHesap[];
 };
 type DovizCevirRequest = {
@@ -202,11 +219,16 @@ export default function Home() {
               throw new Error(`${musteri.id} numaralı müşteri için hesap listesi geçersiz.`);
             }
 
-            return (data as HesapResponse).hesaplar.map((hesap) => ({
+            const hesapCevabi = data as HesapResponse;
+
+            return hesapCevabi.hesaplar.map((hesap) => ({
               ...hesap,
+              hesapAnahtari: `${musteri.id}-${hesap.hesapEkNo}`,
               musteriId: musteri.id,
               musteriAdi: musteri.ad,
               musteriSoyadi: musteri.soyad,
+              subeKodu: hesapCevabi.sube.kod,
+              subeAdi: hesapCevabi.sube.ad,
             }));
           }),
         );
@@ -302,7 +324,7 @@ export default function Home() {
 
     const arananEkNo = Number(girilenEkNo);
     const eslesenHesaplar = tumHesaplar.filter(
-      (hesap) => hesap.ekNo === arananEkNo,
+      (hesap) => hesap.hesapEkNo === arananEkNo,
     );
 
     setEkNolariDropdown(eslesenHesaplar);
@@ -317,7 +339,7 @@ export default function Home() {
     }
 
     if (eslesenHesaplar.length === 1) {
-      hesapSec(eslesenHesaplar[0].id.toString());
+      hesapSec(eslesenHesaplar[0].hesapAnahtari);
       return;
     }
 
@@ -328,9 +350,11 @@ export default function Home() {
     );
   }
 
-  function hesapSec(hesapId: string) {
-    setSecilenEkNo(hesapId);
-    const hesap = tumHesaplar.find((item) => item.id === Number(hesapId));
+  function hesapSec(hesapAnahtari: string) {
+    setSecilenEkNo(hesapAnahtari);
+    const hesap = tumHesaplar.find(
+      (item) => item.hesapAnahtari === hesapAnahtari,
+    );
 
     if (!hesap) return;
 
@@ -341,21 +365,21 @@ export default function Home() {
     setSecilenMusteri(hesap.musteriId.toString());
     setHesaplar(musteriHesaplari);
     setEkNolariDropdown(musteriHesaplari);
-    setSecilenHesap(hesapId);
-    setEkNo(hesap.ekNo.toString());
+    setSecilenHesap(hesapAnahtari);
+    setEkNo(hesap.hesapEkNo.toString());
     setMusteriAdi(`${hesap.musteriAdi} ${hesap.musteriSoyadi}`);
-    setSubeKodu("");
-    setSubeAdi("");
+    setSubeKodu(hesap.subeKodu);
+    setSubeAdi(hesap.subeAdi);
     setHesapAramaMesaji("");
   }
 
-  function alacakliHesapSec(hesapId: string) {
-    setAlacakliHesapId(hesapId);
-    const hesap = ekNolariDropdown.find(
-      (item) => item.id === Number(hesapId),
+  function alacakliHesapSec(hesapAnahtari: string) {
+    setAlacakliHesapId(hesapAnahtari);
+    const hesap = hesaplar.find(
+      (item) => item.hesapAnahtari === hesapAnahtari,
     );
 
-    setAlacakliEkNo(hesap?.ekNo.toString() ?? "");
+    setAlacakliEkNo(hesap?.hesapEkNo.toString() ?? "");
   }
 
   function formTemizle() {
@@ -385,10 +409,10 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
   const borcluHesap = tumHesaplar.find(
-    (hesap) => hesap.id === Number(secilenEkNo),
+    (hesap) => hesap.hesapAnahtari === secilenEkNo,
   );
   const alacakliHesap = tumHesaplar.find(
-    (hesap) => hesap.id === Number(alacakliHesapId),
+    (hesap) => hesap.hesapAnahtari === alacakliHesapId,
   );
   const miktar = Number(odenecekMiktar);
 
@@ -397,8 +421,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
     return;
   }
 
-  if (!Number.isFinite(miktar) || miktar <= 0) {
-    alert("Geçerli bir ödenecek miktar girin.");
+  if (!Number.isFinite(miktar) || miktar < 1) {
+    alert("Ödenecek miktar en az 1 olmalıdır.");
     return;
   }
 
@@ -409,8 +433,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
   const payload: DovizCevirRequest = {
     musteriId: Number(secilenMusteri),
-    borcluHesapEkNo: borcluHesap.ekNo,
-    alacakliHesapEkNo: alacakliHesap.ekNo,
+    borcluHesapEkNo: borcluHesap.hesapEkNo,
+    alacakliHesapEkNo: alacakliHesap.hesapEkNo,
     odenecekDovizMiktari: miktar,
   };
 
@@ -445,10 +469,10 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 }
 
   const secilenBorcluHesap = tumHesaplar.find(
-    (hesap) => hesap.id === Number(secilenEkNo),
+    (hesap) => hesap.hesapAnahtari === secilenEkNo,
   );
   const secilenAlacakliHesap = tumHesaplar.find(
-    (hesap) => hesap.id === Number(alacakliHesapId),
+    (hesap) => hesap.hesapAnahtari === alacakliHesapId,
   );
 
   return (
@@ -678,7 +702,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <input
                           type="text"
-                          placeholder="Ek No (örn: 001)"
+                          placeholder="Ek No (örn: 5001)"
                           value={borçluHesap}
                           onChange={(e) => hesapBilgisiGetir(e.target.value)}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
@@ -694,8 +718,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         >
                           <option value="">Seçiniz</option>
                           {ekNolariDropdown.map((hesap) => (
-                            <option key={hesap.id} value={hesap.id}>
-                              {hesap.ekNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)} - {hesap.musteriAdi} {hesap.musteriSoyadi}
+                            <option key={hesap.hesapAnahtari} value={hesap.hesapAnahtari}>
+                              {hesap.hesapEkNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)} - {hesap.musteriAdi} {hesap.musteriSoyadi}
                             </option>
                           ))}
                         </select>
@@ -765,8 +789,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         >
                           <option value="">Seçiniz</option>
                           {hesaplar.map((hesap) => (
-                            <option key={hesap.id} value={hesap.id}>
-                              {hesap.ekNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)}
+                            <option key={hesap.hesapAnahtari} value={hesap.hesapAnahtari}>
+                              {hesap.hesapEkNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)}
                             </option>
                           ))}
                         </select>
