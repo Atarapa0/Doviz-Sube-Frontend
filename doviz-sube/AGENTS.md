@@ -14,5 +14,5 @@ usecustomedu 1 tanesini çevirecem
 react satae yönetimi araştırk kütüphaneleri bakınacamü
 
 useeffectde dinaik kulland değiişkeni dinle
-
+   
 useref araştık hooklar tekrardan geçeriz
