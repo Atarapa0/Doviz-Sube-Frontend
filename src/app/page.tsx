@@ -1,7 +1,7 @@
 "use client";
 
-import Header from "@/app/companents/Header";
-import Sidebar from "@/app/companents/Sidebar";
+import Header from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
 import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
 import { publicDegiskenler } from "@/lib/public-degiskenler";
 import {
@@ -628,12 +628,10 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                     type="text"
                     readOnly
                     value={referansOnizleme}
-                    placeholder="Şube ve işlem tipi seçildiğinde oluşur"
+                    placeholder="Seçimlere Bağlı Otomatik Oluşur"
                     style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                   />
-                  <span style={{ display: "block", marginTop: "4px", color: "#667085", fontSize: "11px" }}>
-                    Son 6 hane işlem tamamlandığında backend tarafından oluşturulur.
-                  </span>
+                  
                 </div>
 
                 <Tabs
