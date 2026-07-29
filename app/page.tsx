@@ -3,6 +3,11 @@
 import Header from "@/app/companents/Header";
 import Sidebar from "@/app/companents/Sidebar";
 import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
+import { publicDegiskenler } from "@/lib/public-degiskenler";
+import {
+  dovizFormReducer,
+  initialDovizFormState,
+} from "@/reducers/doviz-form-reducer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
@@ -15,7 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  FormEvent,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 
 type Doviz = {
   id: number;
@@ -87,6 +99,18 @@ type KurResponse = {
   kurlar: Kur[];
 };
 
+function hesapCevabiniDonustur(hesapCevabi: HesapResponse): Hesap[] {
+  return hesapCevabi.hesaplar.map((hesap) => ({
+    ...hesap,
+    hesapAnahtari: `${hesapCevabi.id}-${hesap.hesapEkNo}`,
+    musteriId: hesapCevabi.id,
+    musteriAdi: hesapCevabi.ad,
+    musteriSoyadi: hesapCevabi.soyad,
+    subeKodu: hesapCevabi.sube.kod,
+    subeAdi: hesapCevabi.sube.ad,
+  }));
+}
+
 function birimKurunuBul(
   dovizKodu: string,
   kurTuru: "alis" | "satis",
@@ -129,25 +153,45 @@ function bakiyeYaz(value: number, dovizKodu: string) {
   }).format(value)} ${dovizKodu}`;
 }
 
+const ISLEM_KODLARI: Record<string, string> = {
+  alis: "DOVA",
+  satis: "DOVS",
+  arbitraj: "DOVR",
+};
+
+function referansOnizlemesiOlustur(subeKodu: string, islemTipi: string) {
+  const islemKodu = ISLEM_KODLARI[islemTipi];
+
+  if (!subeKodu || !islemKodu) return "";
+
+  const yil = new Date().getFullYear().toString().slice(-2);
+  return `${subeKodu}${islemKodu}${yil}XXXXXX`;
+}
 
 export default function Home() {
   const [dovizler, setDovizler] = useState<Doviz[]>([]);
   const [kurlar, setKurlar] = useState<Kur[]>([]);
   const [kurTarihi, setKurTarihi] = useState("");
-  const [islemReferansi, setIslemReferansi] = useState("");
   const [secilenDoviz, setSecilenDoviz] = useState("");
-  const [alinacakDoviz, setAlinacakDoviz] = useState("");
-  const [odenecekDoviz, setOdenecekDoviz] = useState("");
-  const [alinacakMiktar, setAlinacakMiktar] = useState("");
-  const [odenecekMiktar, setOdenecekMiktar] = useState("");
-  const [sonMiktarAlani, setSonMiktarAlani] = useState<"alinacak" | "odenecek">("alinacak");
+  const [dovizFormu, dovizFormDispatch] = useReducer(
+    dovizFormReducer,
+    initialDovizFormState,
+  );
+  const {
+    alinacakDoviz,
+    odenecekDoviz,
+    alinacakMiktar,
+    odenecekMiktar,
+    sonMiktarAlani,
+    hesaplamaHatasi,
+  } = dovizFormu;
   const [islemKaynagi, setIslemKaynagi] = useState("");
   const [odemeSekli, setOdemeSekli] = useState("");
   const [miktar, setMiktar] = useState("");
   const [islemTipi, setIslemTipi] = useState("satis");
+  const [gercekReferans, setGercekReferans] = useState("");
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState("");
-  const [hesaplamaHatasi, setHesaplamaHatasi] = useState("");
   const [islemSonucu, setIslemSonucu] = useState({ kaynak: "", sonuc: "" });
   const [secilenMusteri, setSecilenMusteri] = useState("");
   const [hesaplar, setHesaplar] = useState<Hesap[]>([]);
@@ -165,6 +209,8 @@ export default function Home() {
   const [alacakliEkNo, setAlacakliEkNo] = useState("");
   const [hesapAramaMesaji, setHesapAramaMesaji] = useState("");
   const hesapAramaIdRef = useRef(0);
+  const referansOnizleme =
+    gercekReferans || referansOnizlemesiOlustur(subeKodu, islemTipi);
 
   useEffect(() => {
     async function dovizVeKurlariGetir() {
@@ -220,6 +266,11 @@ export default function Home() {
     void dovizVeKurlariGetir();
   }, []);
 
+  useEffect(() => {
+    publicDegiskenler.islemReferansi = referansOnizleme;
+    console.log("Dinamik olarak izlenen işlem referansı:", referansOnizleme);
+  }, [referansOnizleme]);
+
   function karsiligiGuncelle(
     kaynak: "alinacak" | "odenecek",
     miktarDegeri: string,
@@ -227,8 +278,12 @@ export default function Home() {
     yeniOdenecekDoviz = odenecekDoviz,
   ) {
     if (!miktarDegeri || !yeniAlinacakDoviz || !yeniOdenecekDoviz) {
-      if (kaynak === "alinacak") setOdenecekMiktar("");
-      else setAlinacakMiktar("");
+      dovizFormDispatch({
+        type: kaynak === "alinacak"
+          ? "ODENECEK_MIKTAR_HESAPLA"
+          : "ALINACAK_MIKTAR_HESAPLA",
+        payload: "",
+      });
       return;
     }
 
@@ -241,37 +296,56 @@ export default function Home() {
     );
 
     if (sonuc == null) {
-      setHesaplamaHatasi("Seçilen döviz için alış veya satış kuru bulunamadı.");
+      dovizFormDispatch({
+        type: "HESAPLAMA_HATASI_GUNCELLE",
+        payload: "Seçilen döviz için alış veya satış kuru bulunamadı.",
+      });
       return;
     }
 
-    setHesaplamaHatasi("");
-    if (kaynak === "alinacak") setOdenecekMiktar(miktariYaz(sonuc));
-    else setAlinacakMiktar(miktariYaz(sonuc));
+    dovizFormDispatch({ type: "HESAPLAMA_HATASI_GUNCELLE", payload: "" });
+    dovizFormDispatch({
+      type: kaynak === "alinacak"
+        ? "ODENECEK_MIKTAR_HESAPLA"
+        : "ALINACAK_MIKTAR_HESAPLA",
+      payload: miktariYaz(sonuc),
+    });
   }
 
   function alinacakDoviziDegistir(yeniDoviz: string) {
-    setAlinacakDoviz(yeniDoviz);
+    dovizFormDispatch({ type: "ALINACAK_DOVIZ_DEGISTIR", payload: yeniDoviz });
     const kaynakMiktar = sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
     karsiligiGuncelle(sonMiktarAlani, kaynakMiktar, yeniDoviz, odenecekDoviz);
   }
 
   function odenecekDoviziDegistir(yeniDoviz: string) {
-    setOdenecekDoviz(yeniDoviz);
+    dovizFormDispatch({ type: "ODENECEK_DOVIZ_DEGISTIR", payload: yeniDoviz });
     const kaynakMiktar = sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
     karsiligiGuncelle(sonMiktarAlani, kaynakMiktar, alinacakDoviz, yeniDoviz);
   }
 
   function alinacakMiktariDegistir(yeniMiktar: string) {
-    setSonMiktarAlani("alinacak");
-    setAlinacakMiktar(yeniMiktar);
+    dovizFormDispatch({ type: "ALINACAK_MIKTAR_GIR", payload: yeniMiktar });
     karsiligiGuncelle("alinacak", yeniMiktar);
   }
 
   function odenecekMiktariDegistir(yeniMiktar: string) {
-    setSonMiktarAlani("odenecek");
-    setOdenecekMiktar(yeniMiktar);
+    dovizFormDispatch({ type: "ODENECEK_MIKTAR_GIR", payload: yeniMiktar });
     karsiligiGuncelle("odenecek", yeniMiktar);
+  }
+
+  function hesapCevabiniStateIcineYaz(hesapCevabi: HesapResponse) {
+    const musteriHesaplari = hesapCevabiniDonustur(hesapCevabi);
+
+    setSecilenMusteri(hesapCevabi.id.toString());
+    setTumHesaplar(musteriHesaplari);
+    setHesaplar(musteriHesaplari);
+    setEkNolariDropdown(musteriHesaplari);
+    setMusteriAdi(`${hesapCevabi.ad} ${hesapCevabi.soyad}`);
+    setSubeKodu(hesapCevabi.sube.kod);
+    setSubeAdi(hesapCevabi.sube.ad);
+
+    return musteriHesaplari;
   }
 
   async function hesapBilgisiGetir(girilenMusteriId: string) {
@@ -281,6 +355,7 @@ export default function Home() {
     setSecilenEkNo("");
     setAlacakliHesapId("");
     setAlacakliEkNo("");
+    setGercekReferans("");
     setEkNolariDropdown([]);
     setHesaplar([]);
     setTumHesaplar([]);
@@ -334,23 +409,7 @@ export default function Home() {
       }
 
       const hesapCevabi = data as HesapResponse;
-      const musteriHesaplari: Hesap[] = hesapCevabi.hesaplar.map((hesap) => ({
-        ...hesap,
-        hesapAnahtari: `${hesapCevabi.id}-${hesap.hesapEkNo}`,
-        musteriId: hesapCevabi.id,
-        musteriAdi: hesapCevabi.ad,
-        musteriSoyadi: hesapCevabi.soyad,
-        subeKodu: hesapCevabi.sube.kod,
-        subeAdi: hesapCevabi.sube.ad,
-      }));
-
-      setSecilenMusteri(hesapCevabi.id.toString());
-      setTumHesaplar(musteriHesaplari);
-      setHesaplar(musteriHesaplari);
-      setEkNolariDropdown(musteriHesaplari);
-      setMusteriAdi(`${hesapCevabi.ad} ${hesapCevabi.soyad}`);
-      setSubeKodu(hesapCevabi.sube.kod);
-      setSubeAdi(hesapCevabi.sube.ad);
+      const musteriHesaplari = hesapCevabiniStateIcineYaz(hesapCevabi);
       setHesapAramaMesaji(
         musteriHesaplari.length > 0
           ? ""
@@ -404,10 +463,9 @@ export default function Home() {
 
   function formTemizle() {
     setMiktar("");
-    setAlinacakMiktar("");
-    setOdenecekMiktar("");
-    setIslemReferansi("");
-    setHesaplamaHatasi("");
+    dovizFormDispatch({ type: "FORMU_TEMIZLE" });
+    publicDegiskenler.islemReferansi = "";
+    setGercekReferans("");
     setIslemTipi("");
     setSecilenDoviz("");
     setBorçluHesap("");
@@ -482,7 +540,43 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
         ? String(result.sonuc)
         : odenecekMiktar;
 
+    const gercekReferans =
+      typeof result === "object" && result !== null && "referansNo" in result
+        ? String(result.referansNo)
+        : "";
+
+    if (gercekReferans) {
+      publicDegiskenler.islemReferansi = gercekReferans;
+      setGercekReferans(gercekReferans);
+    }
+
     setIslemSonucu({ kaynak: alinacakDoviz, sonuc: sonucMetni });
+
+    try {
+      const hesapResponse = await fetch(
+        NEXT_API_ENDPOINTS.musteriHesaplari(secilenMusteri),
+      );
+      const hesapData: unknown = await hesapResponse.json();
+
+      if (!hesapResponse.ok) {
+        throw new Error("Güncel hesap bakiyeleri alınamadı.");
+      }
+
+      if (
+        typeof hesapData !== "object" ||
+        hesapData === null ||
+        !Array.isArray((hesapData as HesapResponse).hesaplar)
+      ) {
+        throw new Error("Güncel hesap cevabı beklenen formatta değil.");
+      }
+
+      hesapCevabiniStateIcineYaz(hesapData as HesapResponse);
+    } catch (yenilemeHatasi) {
+      console.error("İşlem başarılı fakat bakiyeler yenilenemedi:", yenilemeHatasi);
+      alert("İşlem başarılı, ancak güncel bakiyeler ekrana getirilemedi.");
+      return;
+    }
+
     alert("Döviz işlemi başarıyla gerçekleştirildi.");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.";
@@ -532,13 +626,24 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                   <input
                     id="islem-referansi"
                     type="text"
-                    value={islemReferansi}
-                    onChange={(e) => setIslemReferansi(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
+                    readOnly
+                    value={referansOnizleme}
+                    placeholder="Şube ve işlem tipi seçildiğinde oluşur"
+                    style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                   />
+                  <span style={{ display: "block", marginTop: "4px", color: "#667085", fontSize: "11px" }}>
+                    Son 6 hane işlem tamamlandığında backend tarafından oluşturulur.
+                  </span>
                 </div>
 
-                <Tabs value={islemTipi} onValueChange={setIslemTipi} className="w-full md:w-auto">
+                <Tabs
+                  value={islemTipi}
+                  onValueChange={(yeniIslemTipi) => {
+                    setGercekReferans("");
+                    setIslemTipi(yeniIslemTipi);
+                  }}
+                  className="w-full md:w-auto"
+                >
                   <TabsList className="grid h-auto w-full grid-cols-3 gap-2 bg-transparent p-0 group-data-horizontal/tabs:h-auto md:w-[450px]">
                     <TabsTrigger
                       value="alis"
@@ -724,7 +829,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <input
                           type="text"
-                          placeholder="Müşteri ID (örn: 1)"
+                          placeholder="Müşteri ID (örn: 100000)"
                           value={borçluHesap}
                           onChange={(e) => void hesapBilgisiGetir(e.target.value)}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
