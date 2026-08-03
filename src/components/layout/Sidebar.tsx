@@ -6,11 +6,13 @@ import {
   ArrowRightLeft,
   BadgePlus,
   BookOpenText,
+  Building2,
   ChartNoAxesCombined,
   CircleDollarSign,
   Gauge,
   Landmark,
   ListRestart,
+  MapPinPlus,
   Users,
 } from "lucide-react";
 import {
@@ -30,6 +32,8 @@ const menuItems = [
   { title: "Döviz İşlem Geçmişi", href: "/doviz-islem-gecmisi", icon: ListRestart },
   { title: "Müşteriler", href: "/musteriler", icon: Users },
   { title: "Yeni Müşteri", href: "/yeni-musteri", icon: BadgePlus },
+  { title: "Şubeler", href: "/subeler", icon: Building2 },
+  { title: "Yeni Şube", href: "/yeni-sube", icon: MapPinPlus },
   { title: "Hesap Açma", href: "/hesap-acma", icon: Landmark },
   { title: "Hesap Hareketleri", href: "/hesap-hareketleri", icon: BookOpenText },
   { title: "Güncel Kurlar", href: "/guncel-kurlar", icon: ChartNoAxesCombined },

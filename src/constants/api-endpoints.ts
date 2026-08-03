@@ -4,6 +4,7 @@ export const NEXT_API_ENDPOINTS = {
   musteriler: "/api/musteriler",
   dovizCevir: "/api/doviz-cevir",
   dovizIslemleri: "/api/doviz-islemleri",
+  subeler: "/api/subeler",
   musteriHesaplari: (musteriId: string | number) =>
     `/api/hesaplar/${musteriId}`,
   hesapHareketleri: (
@@ -18,6 +19,7 @@ export const BACKEND_API_ENDPOINTS = {
   musteriler: "/api/v1/musteriler",
   dovizCevir: "/api/v1/doviz-cevir",
   dovizIslemleri: "/api/v1/doviz-islemleri-getir",
+  subeler: "/api/v1/subeler",
   musteriHesaplari: (musteriId: string | number) =>
     `/api/v1/musteriler/${musteriId}/hesaplar`,
   hesapHareketleri: (

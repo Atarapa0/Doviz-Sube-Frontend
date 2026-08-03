@@ -15,8 +15,11 @@ export function kurlariGetir() {
   return clientApiRequest<KurResponse>(NEXT_API_ENDPOINTS.kurlar);
 }
 
-export function dovizIslemleriniGetir() {
-  return clientApiRequest<DovizIslemi[]>(NEXT_API_ENDPOINTS.dovizIslemleri);
+export function dovizIslemleriniGetir(subeKodu?: string) {
+  const query = subeKodu ? `?subeKodu=${encodeURIComponent(subeKodu)}` : "";
+  return clientApiRequest<DovizIslemi[]>(
+    `${NEXT_API_ENDPOINTS.dovizIslemleri}${query}`,
+  );
 }
 
 export function dovizCevir(body: DovizCevirRequest) {

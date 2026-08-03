@@ -3,6 +3,13 @@ export type Sube = {
   kod: string;
   ad: string;
   aktifMi?: boolean;
+  musteriSayisi?: number;
+  olusturmaTarihi?: string;
+};
+
+export type SubeOlusturRequest = {
+  kod: string;
+  ad: string;
 };
 
 export type Musteri = {
