@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowRightLeft,
-  BadgePlus,
   BookOpenText,
   Building2,
   ChartNoAxesCombined,
@@ -12,7 +11,6 @@ import {
   Gauge,
   Landmark,
   ListRestart,
-  MapPinPlus,
   Users,
 } from "lucide-react";
 import {
@@ -25,15 +23,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useMusteri } from "@/components/providers/MusteriProvider";
 
 const menuItems = [
   { title: "Dashboard", href: "/dashboard", icon: Gauge },
   { title: "Döviz Alış / Satış", href: "/", icon: CircleDollarSign },
   { title: "Döviz İşlem Geçmişi", href: "/doviz-islem-gecmisi", icon: ListRestart },
   { title: "Müşteriler", href: "/musteriler", icon: Users },
-  { title: "Yeni Müşteri", href: "/yeni-musteri", icon: BadgePlus },
   { title: "Şubeler", href: "/subeler", icon: Building2 },
-  { title: "Yeni Şube", href: "/yeni-sube", icon: MapPinPlus },
   { title: "Hesap Açma", href: "/hesap-acma", icon: Landmark },
   { title: "Hesap Hareketleri", href: "/hesap-hareketleri", icon: BookOpenText },
   { title: "Güncel Kurlar", href: "/guncel-kurlar", icon: ChartNoAxesCombined },
@@ -42,6 +39,10 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { secilenMusteri } = useMusteri();
+  const secilenSube = secilenMusteri
+    ? `${secilenMusteri.sube.kod} - ${secilenMusteri.sube.ad}`
+    : "Şube seçilmedi";
 
   return (
     <ShadcnSidebar
@@ -50,8 +51,10 @@ export default function Sidebar() {
     >
       <SidebarHeader className="bg-[#f4f6f8] p-5 pb-3">
         <div className="mb-3">
-          <h2 className="m-0 text-xl font-bold text-[#0047b3]">xxxxx Bankası</h2>
-          <p className="m-0 text-xs text-[#666]">xxxx Şube</p>
+          <h2 className="m-0 text-xl font-bold text-[#0047b3]">Furkan Bankası</h2>
+          <p className="m-0 truncate text-xs text-[#666]" title={secilenSube}>
+            {secilenSube}
+          </p>
         </div>
       </SidebarHeader>
 

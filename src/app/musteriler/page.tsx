@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, Users } from "lucide-react";
+import Link from "next/link";
+import { Plus, Search, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
@@ -47,7 +48,16 @@ export default function MusterilerPage() {
   return (
     <AppShell>
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-        <PageHeading title="Müşteriler" description="API'den gelen müşterileri arayın ve aktif müşteri olarak seçin." icon={Users} />
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <PageHeading title="Müşteriler" description="API'den gelen müşterileri arayın ve aktif müşteri olarak seçin." icon={Users} />
+          <Link
+            href="/yeni-musteri"
+            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95]"
+          >
+            <Plus className="size-4" />
+            Yeni Müşteri Ekle
+          </Link>
+        </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <label className="relative block max-w-lg">

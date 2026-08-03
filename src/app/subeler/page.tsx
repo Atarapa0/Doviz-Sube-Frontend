@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, Search } from "lucide-react";
+import Link from "next/link";
+import { Building2, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
@@ -39,11 +40,20 @@ export default function SubelerPage() {
   return (
     <AppShell>
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6">
-        <PageHeading
-          title="Şubeler"
-          description="Bankaya kayıtlı şubeleri, tam adlarını ve müşteri sayılarını görüntüleyin."
-          icon={Building2}
-        />
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <PageHeading
+            title="Şubeler"
+            description="Bankaya kayıtlı şubeleri, tam adlarını ve müşteri sayılarını görüntüleyin."
+            icon={Building2}
+          />
+          <Link
+            href="/yeni-sube"
+            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95]"
+          >
+            <Plus className="size-4" />
+            Yeni Şube Ekle
+          </Link>
+        </div>
 
         <section className="grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_220px_auto]">
           <label className="relative">

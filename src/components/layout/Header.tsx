@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { useMusteri } from "@/components/providers/MusteriProvider";
+import MusteriCombobox from "@/components/ui/musteri-combobox";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
 
 export default function Header() {
@@ -39,7 +40,7 @@ export default function Header() {
       return;
     }
 
-    setAramaMesaji(sadeceRakam ? "Müşteri ID 6 haneli olmalı." : "");
+    setAramaMesaji("");
   }
 
   const adSoyad = secilenMusteri
@@ -59,15 +60,11 @@ export default function Header() {
       </span>
 
       <div className="relative order-3 w-full max-w-md lg:order-none">
-        <Search className="pointer-events-none absolute left-3 top-3 size-4 text-slate-400" />
-        <input
-          inputMode="numeric"
-          maxLength={6}
+        <MusteriCombobox
           value={musteriId}
-          onChange={(event) => musteriIdDegistir(event.target.value)}
-          placeholder="Müşteri ID giriniz (100000)"
-          aria-label="Müşteri ID"
-          className="h-10 w-full rounded-full border border-slate-300 pl-10 pr-4 text-sm outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100"
+          onValueChange={musteriIdDegistir}
+          placeholder="Müşteri ID yazın veya listeden seçin"
+          inputClassName="rounded-full"
         />
         {aramaMesaji && (
           <span className="absolute left-4 top-11 text-[11px] font-medium text-amber-700">

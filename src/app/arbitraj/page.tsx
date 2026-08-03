@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
 import { useMusteri } from "@/components/providers/MusteriProvider";
+import MusteriCombobox from "@/components/ui/musteri-combobox";
 import { paraYaz } from "@/lib/formatters";
 import { dovizCevir, kurlariGetir } from "@/services/doviz-service";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
@@ -51,7 +52,7 @@ export default function ArbitrajPage() {
     setMesaj("");
 
     if (!/^\d{6}$/.test(id)) {
-      if (id) setMesaj("Müşteri ID 6 haneli olmalı.");
+      setMesaj("");
       return;
     }
 
@@ -152,15 +153,9 @@ export default function ArbitrajPage() {
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             <label className="flex flex-col gap-2 text-sm font-semibold">
               Müşteri ID
-              <input
-                inputMode="numeric"
-                maxLength={6}
+              <MusteriCombobox
                 value={musteriId}
-                onChange={(event) =>
-                  void musteriGetir(event.target.value.replace(/\D/g, ""))
-                }
-                placeholder="100000"
-                className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100"
+                onValueChange={(id) => void musteriGetir(id)}
               />
             </label>
 

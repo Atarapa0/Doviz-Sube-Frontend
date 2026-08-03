@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
 import { useMusteri } from "@/components/providers/MusteriProvider";
+import MusteriCombobox from "@/components/ui/musteri-combobox";
 import { paraYaz, tarihYaz } from "@/lib/formatters";
 import { hesapHareketleriniGetir } from "@/services/hesap-service";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
@@ -34,7 +35,7 @@ export default function HesapHareketleriPage() {
     setSonucGosteriliyor(false);
 
     if (!/^\d{6}$/.test(id)) {
-      setMesaj(id ? "Müşteri ID 6 haneli olmalı." : "");
+      setMesaj("");
       return;
     }
 
@@ -110,15 +111,9 @@ export default function HesapHareketleriPage() {
           <div className="grid gap-4 md:grid-cols-[1fr_1.5fr_auto]">
             <label className="flex flex-col gap-2 text-sm font-semibold">
               Müşteri ID
-              <input
-                inputMode="numeric"
-                maxLength={6}
+              <MusteriCombobox
                 value={musteriId}
-                onChange={(event) =>
-                  void musteriGetir(event.target.value.replace(/\D/g, ""))
-                }
-                placeholder="100000"
-                className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100"
+                onValueChange={(id) => void musteriGetir(id)}
               />
             </label>
 

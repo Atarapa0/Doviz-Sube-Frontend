@@ -11,6 +11,7 @@ import {
 } from "@/reducers/doviz-form-reducer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MusteriCombobox from "@/components/ui/musteri-combobox";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
 import {
   Table,
@@ -385,7 +386,7 @@ export default function Home() {
       setSubeKodu("");
       setSubeAdi("");
       setSecilenMusteri("");
-      setHesapAramaMesaji("Müşteri ID 6 haneli olmalıdır.");
+      setHesapAramaMesaji("");
       return;
     }
 
@@ -844,17 +845,9 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                     <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
                       <div style={{ width: "30%" }}>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="Müşteri ID (örn: 100000)"
+                        <MusteriCombobox
                           value={borçluHesap}
-                          onChange={(e) => {
-                            const sadeceRakam = e.target.value.replace(/\D/g, "");
-                            void hesapBilgisiGetir(sadeceRakam);
-                          }}
-                          style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
+                          onValueChange={(id) => void hesapBilgisiGetir(id)}
                         />
                       </div>
                       <div style={{ width: "12%" }}>
