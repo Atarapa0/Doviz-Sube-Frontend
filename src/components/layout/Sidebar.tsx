@@ -1,3 +1,18 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  ArrowRightLeft,
+  BadgePlus,
+  BookOpenText,
+  ChartNoAxesCombined,
+  CircleDollarSign,
+  Gauge,
+  Landmark,
+  ListRestart,
+  Users,
+} from "lucide-react";
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -10,18 +25,20 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  "Dashboard",
-  "Döviz Alış / Satış",
-  "Döviz İşlem Geçmişi",
-  "Müşteriler",
-  "Yeni Müşteri",
-  "Hesap Açma",
-  "Hesap Hareketleri",
-  "Güncel Kurlar",
-  "Arbitraj",
+  { title: "Dashboard", href: "/dashboard", icon: Gauge },
+  { title: "Döviz Alış / Satış", href: "/", icon: CircleDollarSign },
+  { title: "Döviz İşlem Geçmişi", href: "/doviz-islem-gecmisi", icon: ListRestart },
+  { title: "Müşteriler", href: "/musteriler", icon: Users },
+  { title: "Yeni Müşteri", href: "/yeni-musteri", icon: BadgePlus },
+  { title: "Hesap Açma", href: "/hesap-acma", icon: Landmark },
+  { title: "Hesap Hareketleri", href: "/hesap-hareketleri", icon: BookOpenText },
+  { title: "Güncel Kurlar", href: "/guncel-kurlar", icon: ChartNoAxesCombined },
+  { title: "Arbitraj", href: "/arbitraj", icon: ArrowRightLeft },
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <ShadcnSidebar
       collapsible="none"
@@ -39,15 +56,18 @@ export default function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {menuItems.map((item) => {
-                const isActive = item === "Döviz Alış / Satış";
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
 
                 return (
-                  <SidebarMenuItem key={item}>
+                  <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
+                      render={<Link href={item.href} />}
                       isActive={isActive}
                       className="h-10 rounded-md px-3 text-sm text-black hover:bg-slate-200 hover:text-black data-[active=true]:bg-[#0047b3] data-[active=true]:text-white data-[active=true]:hover:bg-[#0047b3] data-[active=true]:hover:text-white"
                     >
-                      <span>{item}</span>
+                      <Icon className="size-4" />
+                      <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

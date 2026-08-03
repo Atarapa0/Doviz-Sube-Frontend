@@ -11,8 +11,11 @@ server side
 --usestateden bir değişken cıkar publık değişken yap dene
 fazla yerde usecustomreduser
 usecustomedu 1 tanesini çevirecem
-react satae yönetimi araştırk kütüphaneleri bakınacamü
+--react satae yönetimi araştırk kütüphaneleri bakınacamü
 
 --useeffectde dinaik kulland değiişkeni dinle
    
-useref araştık hooklar tekrardan geçeriz
+--useref araştık hooklar tekrardan geçeriz
+-----------------------------------
+rdx state yönetimi kutüphaneleri rediux
+redux toolkit

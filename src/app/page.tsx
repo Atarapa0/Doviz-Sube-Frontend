@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
 import { publicDegiskenler } from "@/lib/public-degiskenler";
+import { useMusteri } from "@/components/providers/MusteriProvider";
 import {
   dovizFormReducer,
   initialDovizFormState,
@@ -28,6 +29,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { log } from "util";
 
 type Doviz = {
   id: number;
@@ -120,6 +122,7 @@ function birimKurunuBul(
 
   const kur = kurlar.find((item) => item.kod === dovizKodu);
   const deger = kurTuru === "alis" ? kur?.dovizAlis : kur?.dovizSatis;
+  debugger;
 
   if (!kur || deger == null) return null;
   return deger / kur.birim;
@@ -133,7 +136,9 @@ function miktariHesapla(
   kurlar: Kur[],
 ) {
   const alisKuru = birimKurunuBul(alinacakDoviz, "alis", kurlar);
+  debugger;
   const satisKuru = birimKurunuBul(odenecekDoviz, "satis", kurlar);
+  debugger;
 
   if (alisKuru == null || satisKuru == null) return null;
 
@@ -169,8 +174,10 @@ function referansOnizlemesiOlustur(subeKodu: string, islemTipi: string) {
 }
 
 export default function Home() {
+  const { musteriSec: headerMusteriSec } = useMusteri();
   const [dovizler, setDovizler] = useState<Doviz[]>([]);
-  const [kurlar, setKurlar] = useState<Kur[]>([]);
+  const [kurlar, setKurlar] = useState<Kur[]>([]); 
+  //let kurlar: Kur[] = [];
   const [kurTarihi, setKurTarihi] = useState("");
   const [secilenDoviz, setSecilenDoviz] = useState("");
   const [dovizFormu, dovizFormDispatch] = useReducer(
@@ -254,6 +261,7 @@ export default function Home() {
         setDovizler(dovizData as Doviz[]);
         setKurlar(kurSonucu.kurlar);
         setKurTarihi(kurSonucu.tarih);
+        debugger;
         setTumMusteriler(musteriListesi);
       } catch (error) {
         console.error("Döviz, kurlar veya müşteriler alınamadı:", error);
@@ -337,6 +345,7 @@ export default function Home() {
   function hesapCevabiniStateIcineYaz(hesapCevabi: HesapResponse) {
     const musteriHesaplari = hesapCevabiniDonustur(hesapCevabi);
 
+    headerMusteriSec(hesapCevabi);
     setSecilenMusteri(hesapCevabi.id.toString());
     setTumHesaplar(musteriHesaplari);
     setHesaplar(musteriHesaplari);
@@ -367,6 +376,16 @@ export default function Home() {
       setSubeKodu("");
       setSubeAdi("");
       setHesapAramaMesaji("");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(girilenMusteriId)) {
+      setEkNo("");
+      setMusteriAdi("");
+      setSubeKodu("");
+      setSubeAdi("");
+      setSecilenMusteri("");
+      setHesapAramaMesaji("Müşteri ID 6 haneli olmalıdır.");
       return;
     }
 
@@ -827,9 +846,14 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <input
                           type="text"
+                          inputMode="numeric"
+                          maxLength={6}
                           placeholder="Müşteri ID (örn: 100000)"
                           value={borçluHesap}
-                          onChange={(e) => void hesapBilgisiGetir(e.target.value)}
+                          onChange={(e) => {
+                            const sadeceRakam = e.target.value.replace(/\D/g, "");
+                            void hesapBilgisiGetir(sadeceRakam);
+                          }}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
                         />
                       </div>

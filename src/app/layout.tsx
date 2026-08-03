@@ -3,6 +3,7 @@ import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MusteriProvider } from "@/components/providers/MusteriProvider";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -19,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="tr" className={cn("h-full antialiased", "font-sans", geist.variable)}>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <MusteriProvider>{children}</MusteriProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

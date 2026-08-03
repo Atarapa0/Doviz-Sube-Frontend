@@ -3,8 +3,13 @@ export const NEXT_API_ENDPOINTS = {
   kurlar: "/api/kurlar",
   musteriler: "/api/musteriler",
   dovizCevir: "/api/doviz-cevir",
+  dovizIslemleri: "/api/doviz-islemleri",
   musteriHesaplari: (musteriId: string | number) =>
     `/api/hesaplar/${musteriId}`,
+  hesapHareketleri: (
+    musteriId: string | number,
+    hesapEkNo: string | number,
+  ) => `/api/hesap-hareketleri/${musteriId}/${hesapEkNo}`,
 } as const;
 
 export const BACKEND_API_ENDPOINTS = {
