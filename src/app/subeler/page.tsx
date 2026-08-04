@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
-import { subeleriGetir } from "@/services/sube-service";
+import { subeDetayiGetir, subeleriGetir } from "@/services/sube-service";
 import type { Sube } from "@/types/api";
 
 export default function SubelerPage() {
@@ -15,6 +15,8 @@ export default function SubelerPage() {
   const [durum, setDurum] = useState("");
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState("");
+  const [secilenSube, setSecilenSube] = useState<Sube | null>(null);
+  const [detayYukleniyor, setDetayYukleniyor] = useState(false);
 
   useEffect(() => {
     subeleriGetir()
@@ -36,6 +38,18 @@ export default function SubelerPage() {
       return metinUyuyor && durumUyuyor;
     });
   }, [arama, durum, subeler]);
+
+  async function subeDetayiniGoster(subeKodu: string) {
+    setDetayYukleniyor(true);
+    setHata("");
+    try {
+      setSecilenSube(await subeDetayiGetir(subeKodu));
+    } catch (error) {
+      setHata(error instanceof Error ? error.message : "Şube detayı alınamadı.");
+    } finally {
+      setDetayYukleniyor(false);
+    }
+  }
 
   return (
     <AppShell>
@@ -97,9 +111,9 @@ export default function SubelerPage() {
             <table className="w-full min-w-[800px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
-                  {["Şube Kodu", "Tam Şube Adı", "Müşteri Sayısı", "Oluşturma Tarihi", "Durum"].map(
-                    (baslik) => (
-                      <th key={baslik} className="px-6 py-3 font-semibold">
+                  {["Şube Kodu", "Tam Şube Adı", "Müşteri Sayısı", "Oluşturma Tarihi", "Durum", ""].map(
+                    (baslik, index) => (
+                      <th key={`${baslik}-${index}`} className="px-6 py-3 font-semibold">
                         {baslik}
                       </th>
                     ),
@@ -130,18 +144,21 @@ export default function SubelerPage() {
                         {sube.aktifMi ? "Aktif" : "Pasif"}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <button type="button" onClick={() => void subeDetayiniGoster(sube.kod)} className="rounded-md border border-blue-200 px-3 py-2 text-xs font-semibold text-[#0047b3] hover:bg-blue-50">Detay</button>
+                    </td>
                   </tr>
                 ))}
                 {yukleniyor && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-14 text-center text-slate-500">
+                    <td colSpan={6} className="px-6 py-14 text-center text-slate-500">
                       Şubeler yükleniyor...
                     </td>
                   </tr>
                 )}
                 {!yukleniyor && filtrelenmisSubeler.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-14 text-center text-slate-500">
+                    <td colSpan={6} className="px-6 py-14 text-center text-slate-500">
                       Şube bulunamadı.
                     </td>
                   </tr>
@@ -150,6 +167,24 @@ export default function SubelerPage() {
             </table>
           </div>
         </section>
+
+        {(detayYukleniyor || secilenSube) && (
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-bold">Şube Detayı</h2>
+              {secilenSube && <button type="button" onClick={() => setSecilenSube(null)} className="rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold hover:bg-slate-200">Kapat</button>}
+            </div>
+            {detayYukleniyor && <p className="mt-4 text-sm text-slate-500">Şube detayı yükleniyor...</p>}
+            {!detayYukleniyor && secilenSube && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg bg-slate-50 p-4"><span className="text-xs text-slate-500">Şube kodu</span><p className="mt-1 font-bold text-[#0047b3]">{secilenSube.kod}</p></div>
+                <div className="rounded-lg bg-slate-50 p-4"><span className="text-xs text-slate-500">Tam adı</span><p className="mt-1 font-bold">{secilenSube.ad}</p></div>
+                <div className="rounded-lg bg-slate-50 p-4"><span className="text-xs text-slate-500">Müşteri sayısı</span><p className="mt-1 font-bold">{secilenSube.musteriSayisi ?? "—"}</p></div>
+                <div className="rounded-lg bg-slate-50 p-4"><span className="text-xs text-slate-500">Durum</span><p className="mt-1 font-bold">{secilenSube.aktifMi ? "Aktif" : "Pasif"}</p></div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </AppShell>
   );

@@ -30,7 +30,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { log } from "util";
 
 type Doviz = {
   id: number;
@@ -123,7 +122,6 @@ function birimKurunuBul(
 
   const kur = kurlar.find((item) => item.kod === dovizKodu);
   const deger = kurTuru === "alis" ? kur?.dovizAlis : kur?.dovizSatis;
-  debugger;
 
   if (!kur || deger == null) return null;
   return deger / kur.birim;
@@ -137,9 +135,7 @@ function miktariHesapla(
   kurlar: Kur[],
 ) {
   const alisKuru = birimKurunuBul(alinacakDoviz, "alis", kurlar);
-  debugger;
   const satisKuru = birimKurunuBul(odenecekDoviz, "satis", kurlar);
-  debugger;
 
   if (alisKuru == null || satisKuru == null) return null;
 
@@ -180,7 +176,6 @@ export default function Home() {
   const [kurlar, setKurlar] = useState<Kur[]>([]); 
   //let kurlar: Kur[] = [];
   const [kurTarihi, setKurTarihi] = useState("");
-  const [secilenDoviz, setSecilenDoviz] = useState("");
   const [dovizFormu, dovizFormDispatch] = useReducer(
     dovizFormReducer,
     initialDovizFormState,
@@ -194,27 +189,20 @@ export default function Home() {
     hesaplamaHatasi,
   } = dovizFormu;
   const [islemKaynagi, setIslemKaynagi] = useState("");
-  const [odemeSekli, setOdemeSekli] = useState("");
-  const [miktar, setMiktar] = useState("");
   const [islemTipi, setIslemTipi] = useState("satis");
   const [gercekReferans, setGercekReferans] = useState("");
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState("");
-  const [islemSonucu, setIslemSonucu] = useState({ kaynak: "", sonuc: "" });
   const [secilenMusteri, setSecilenMusteri] = useState("");
   const [hesaplar, setHesaplar] = useState<Hesap[]>([]);
-  const [secilenHesap, setSecilenHesap] = useState("");
   const [subeKodu, setSubeKodu] = useState("");
   const [subeAdi, setSubeAdi] = useState("");
-  const [ekNo, setEkNo] = useState("");
   const [musteriAdi, setMusteriAdi] = useState("");
   const [borçluHesap, setBorçluHesap] = useState("");
-  const [tumMusteriler, setTumMusteriler] = useState<Musteri[]>([]);
   const [tumHesaplar, setTumHesaplar] = useState<Hesap[]>([]);
   const [ekNolariDropdown, setEkNolariDropdown] = useState<Hesap[]>([]);
   const [secilenEkNo, setSecilenEkNo] = useState("");
   const [alacakliHesapId, setAlacakliHesapId] = useState("");
-  const [alacakliEkNo, setAlacakliEkNo] = useState("");
   const [hesapAramaMesaji, setHesapAramaMesaji] = useState("");
   const hesapAramaIdRef = useRef(0);
   const referansOnizleme =
@@ -224,21 +212,19 @@ export default function Home() {
     async function dovizVeKurlariGetir() {
       try {
         setHata("");
-        const [dovizResponse, kurResponse, musteriResponse] = await Promise.all([
+        const [dovizResponse, kurResponse] = await Promise.all([
           fetch(NEXT_API_ENDPOINTS.dovizler),
           fetch(NEXT_API_ENDPOINTS.kurlar),
-          fetch(NEXT_API_ENDPOINTS.musteriler),
         ]);
 
-        if (!dovizResponse.ok || !kurResponse.ok || !musteriResponse.ok) {
+        if (!dovizResponse.ok || !kurResponse.ok) {
           throw new Error(
-            `API isteği başarısız: döviz=${dovizResponse.status}, kur=${kurResponse.status}, musteri=${musteriResponse.status}`,
+            `API isteği başarısız: döviz=${dovizResponse.status}, kur=${kurResponse.status}`,
           );
         }
 
         const dovizData: unknown = await dovizResponse.json();
         const kurData: unknown = await kurResponse.json();
-        const musteriData: unknown = await musteriResponse.json();
 
         if (!Array.isArray(dovizData)) {
           throw new Error("API beklenen döviz listesini döndürmedi.");
@@ -252,21 +238,13 @@ export default function Home() {
           throw new Error("API beklenen kur listesini döndürmedi.");
         }
 
-        if (!Array.isArray(musteriData)) {
-          throw new Error("API beklenen müşteri listesini döndürmedi.");
-        }
-
-        const musteriListesi = musteriData as Musteri[];
-
         const kurSonucu = kurData as KurResponse;
         setDovizler(dovizData as Doviz[]);
         setKurlar(kurSonucu.kurlar);
         setKurTarihi(kurSonucu.tarih);
-        debugger;
-        setTumMusteriler(musteriListesi);
       } catch (error) {
-        console.error("Döviz, kurlar veya müşteriler alınamadı:", error);
-        setHata("Döviz, kur ve müşteri bilgileri getirilemedi. API'nin çalıştığını kontrol edin.");
+        console.error("Döviz veya kurlar alınamadı:", error);
+        setHata("Döviz ve kur bilgileri getirilemedi. API'nin çalıştığını kontrol edin.");
       } finally {
         setYukleniyor(false);
       }
@@ -364,7 +342,6 @@ export default function Home() {
     setBorçluHesap(girilenMusteriId);
     setSecilenEkNo("");
     setAlacakliHesapId("");
-    setAlacakliEkNo("");
     setGercekReferans("");
     setEkNolariDropdown([]);
     setHesaplar([]);
@@ -372,7 +349,6 @@ export default function Home() {
 
     if (!girilenMusteriId.trim()) {
       setSecilenMusteri("");
-      setEkNo("");
       setMusteriAdi("");
       setSubeKodu("");
       setSubeAdi("");
@@ -381,7 +357,6 @@ export default function Home() {
     }
 
     if (!/^\d{6}$/.test(girilenMusteriId)) {
-      setEkNo("");
       setMusteriAdi("");
       setSubeKodu("");
       setSubeAdi("");
@@ -393,7 +368,6 @@ export default function Home() {
     const musteriId = Number(girilenMusteriId);
 
     if (!Number.isInteger(musteriId) || musteriId < 1) {
-      setEkNo("");
       setMusteriAdi("");
       setSubeKodu("");
       setSubeAdi("");
@@ -439,7 +413,6 @@ export default function Home() {
       if (aramaId !== hesapAramaIdRef.current) return;
 
       setSecilenMusteri("");
-      setEkNo("");
       setMusteriAdi("");
       setSubeKodu("");
       setSubeAdi("");
@@ -464,8 +437,6 @@ export default function Home() {
     setSecilenMusteri(hesap.musteriId.toString());
     setHesaplar(musteriHesaplari);
     setEkNolariDropdown(musteriHesaplari);
-    setSecilenHesap(hesapAnahtari);
-    setEkNo(hesap.hesapEkNo.toString());
     setMusteriAdi(`${hesap.musteriAdi} ${hesap.musteriSoyadi}`);
     setSubeKodu(hesap.subeKodu);
     setSubeAdi(hesap.subeAdi);
@@ -474,32 +445,22 @@ export default function Home() {
 
   function alacakliHesapSec(hesapAnahtari: string) {
     setAlacakliHesapId(hesapAnahtari);
-    const hesap = hesaplar.find(
-      (item) => item.hesapAnahtari === hesapAnahtari,
-    );
-
-    setAlacakliEkNo(hesap?.hesapEkNo.toString() ?? "");
   }
 
   function formTemizle() {
-    setMiktar("");
     dovizFormDispatch({ type: "FORMU_TEMIZLE" });
     publicDegiskenler.islemReferansi = "";
     setGercekReferans("");
     setIslemTipi("");
-    setSecilenDoviz("");
     setBorçluHesap("");
-    setEkNo("");
     setMusteriAdi("");
     setSubeKodu("");
     setSubeAdi("");
     setEkNolariDropdown([]);
     setHesaplar([]);
     setSecilenMusteri("");
-    setSecilenHesap("");
     setSecilenEkNo("");
     setAlacakliHesapId("");
-    setAlacakliEkNo("");
     setHesapAramaMesaji("");
   }
 
@@ -555,11 +516,6 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
       throw new Error(message);
     }
 
-    const sonucMetni =
-      typeof result === "object" && result !== null && "sonuc" in result
-        ? String(result.sonuc)
-        : odenecekMiktar;
-
     const gercekReferans =
       typeof result === "object" && result !== null && "referansNo" in result
         ? String(result.referansNo)
@@ -569,8 +525,6 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
       publicDegiskenler.islemReferansi = gercekReferans;
       setGercekReferans(gercekReferans);
     }
-
-    setIslemSonucu({ kaynak: alinacakDoviz, sonuc: sonucMetni });
 
     try {
       const hesapResponse = await fetch(

@@ -8,7 +8,10 @@ import PageHeading from "@/components/layout/PageHeading";
 import { useMusteri } from "@/components/providers/MusteriProvider";
 import MusteriCombobox from "@/components/ui/musteri-combobox";
 import { paraYaz, tarihYaz } from "@/lib/formatters";
-import { hesapHareketleriniGetir } from "@/services/hesap-service";
+import {
+  hesapHareketleriniGetir,
+  musteriTumHesapHareketleriniGetir,
+} from "@/services/hesap-service";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
 import type {
   HesapHareketleriResponse,
@@ -57,14 +60,24 @@ export default function HesapHareketleriPage() {
     setSonucGosteriliyor(false);
 
     try {
-      const sonuclar =
-        hesapEkNo === TUM_HESAPLAR
-          ? await Promise.all(
-              musteri.hesaplar.map((hesap) =>
-                hesapHareketleriniGetir(musteri.id, hesap.hesapEkNo),
-              ),
-            )
-          : [await hesapHareketleriniGetir(musteri.id, hesapEkNo)];
+      let sonuclar: HesapHareketleriResponse[];
+
+      if (hesapEkNo === TUM_HESAPLAR) {
+        const topluCevap = await musteriTumHesapHareketleriniGetir(musteri.id);
+        sonuclar = topluCevap.hesaplar.map((hesap) => ({
+          hesap: {
+            musteriId: topluCevap.musteriId,
+            hesapEkNo: hesap.hesapEkNo,
+            dovizKodu: hesap.dovizKodu,
+            dovizAdi: hesap.dovizAdi,
+            bakiye: hesap.bakiye,
+            aktifMi: hesap.aktifMi,
+          },
+          hareketler: hesap.hareketler,
+        }));
+      } else {
+        sonuclar = [await hesapHareketleriniGetir(musteri.id, hesapEkNo)];
+      }
 
       setCevaplar(sonuclar);
       setSonucGosteriliyor(true);

@@ -4,8 +4,8 @@ import { ChevronDown, Search, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { musterileriGetir } from "@/services/musteri-service";
-import type { Musteri } from "@/types/api";
+import { musteriAra, musterileriGetir } from "@/services/musteri-service";
+import type { MusteriAramaSonucu } from "@/types/api";
 
 type MusteriComboboxProps = {
   value: string;
@@ -24,20 +24,56 @@ export default function MusteriCombobox({
   inputClassName,
   disabled = false,
 }: MusteriComboboxProps) {
-  const [musteriler, setMusteriler] = useState<Musteri[]>([]);
+  const [musteriler, setMusteriler] = useState<MusteriAramaSonucu[]>([]);
   const [acik, setAcik] = useState(false);
-  const [yukleniyor, setYukleniyor] = useState(true);
+  const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState("");
   const kapsayiciRef = useRef<HTMLDivElement>(null);
+  const istekIdRef = useRef(0);
+  const onValueChangeRef = useRef(onValueChange);
 
   useEffect(() => {
-    musterileriGetir()
-      .then(setMusteriler)
-      .catch((error: unknown) =>
-        setHata(error instanceof Error ? error.message : "Müşteriler alınamadı."),
-      )
-      .finally(() => setYukleniyor(false));
-  }, []);
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  useEffect(() => {
+    if (!acik || disabled) return;
+
+    const istekId = ++istekIdRef.current;
+    const arama = value.trim();
+    const zamanlayici = window.setTimeout(async () => {
+      setYukleniyor(true);
+      setHata("");
+
+      try {
+        const sonuc = arama
+          ? await musteriAra(arama, 10)
+          : (await musterileriGetir({ page: 1, pageSize: 20 })).items;
+
+        if (istekId !== istekIdRef.current) return;
+        setMusteriler(sonuc);
+
+        if (
+          arama &&
+          sonuc.length === 1 &&
+          sonuc[0].id.toString().startsWith(arama)
+        ) {
+          onValueChangeRef.current(sonuc[0].id.toString());
+          setAcik(false);
+        }
+      } catch (error) {
+        if (istekId !== istekIdRef.current) return;
+        setMusteriler([]);
+        setHata(
+          error instanceof Error ? error.message : "Müşteriler alınamadı.",
+        );
+      } finally {
+        if (istekId === istekIdRef.current) setYukleniyor(false);
+      }
+    }, arama ? 250 : 0);
+
+    return () => window.clearTimeout(zamanlayici);
+  }, [acik, disabled, value]);
 
   useEffect(() => {
     function disariyaTiklandi(event: MouseEvent) {
@@ -49,36 +85,17 @@ export default function MusteriCombobox({
   }, []);
 
   const eslesenMusteriler = useMemo(() => {
-    const arama = value.trim().toLocaleLowerCase("tr-TR");
     const aktifMusteriler = musteriler.filter((musteri) => musteri.aktifMi);
-    if (!arama) return aktifMusteriler;
+    return aktifMusteriler;
+  }, [musteriler]);
 
-    return aktifMusteriler.filter((musteri) => {
-      const idEslesiyor = musteri.id.toString().startsWith(arama);
-      const adEslesiyor = `${musteri.ad} ${musteri.soyad}`
-        .toLocaleLowerCase("tr-TR")
-        .includes(arama);
-      return idEslesiyor || adEslesiyor;
-    });
-  }, [musteriler, value]);
-
-  function musteriSec(musteri: Musteri) {
+  function musteriSec(musteri: MusteriAramaSonucu) {
     onValueChange(musteri.id.toString());
     setAcik(false);
   }
 
   function degeriDegistir(girilenDeger: string) {
     const sadeceRakam = girilenDeger.replace(/\D/g, "").slice(0, 6);
-    const eslesmeler = musteriler.filter(
-      (musteri) =>
-        musteri.aktifMi && musteri.id.toString().startsWith(sadeceRakam),
-    );
-
-    if (sadeceRakam && eslesmeler.length === 1) {
-      musteriSec(eslesmeler[0]);
-      return;
-    }
-
     onValueChange(sadeceRakam);
     setAcik(true);
   }

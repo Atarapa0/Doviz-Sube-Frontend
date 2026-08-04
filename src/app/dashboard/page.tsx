@@ -19,7 +19,36 @@ export default function DashboardPage() {
   const [kurTarihi, setKurTarihi] = useState("—");
   const [hata, setHata] = useState("");
 
-  useEffect(() => { Promise.all([musterileriGetir(), dovizIslemleriniGetir(), kurlariGetir()]).then(([musteriler, dovizIslemleri, kur]) => { setMusteriSayisi(musteriler.length); setIslemler(dovizIslemleri); setKurTarihi(kur.tarih); }).catch((error: unknown) => setHata(error instanceof Error ? error.message : "Dashboard verileri alınamadı.")); }, []);
+  useEffect(() => {
+    async function dashboardVerileriniGetir() {
+      try {
+        const [musteriler, ilkIslemSayfasi, kur] = await Promise.all([
+          musterileriGetir({ page: 1, pageSize: 1 }),
+          dovizIslemleriniGetir({ page: 1, pageSize: 100 }),
+          kurlariGetir(),
+        ]);
+        const digerSayfalar = ilkIslemSayfasi.totalPages > 1
+          ? await Promise.all(
+              Array.from(
+                { length: ilkIslemSayfasi.totalPages - 1 },
+                (_, index) => dovizIslemleriniGetir({ page: index + 2, pageSize: 100 }),
+              ),
+            )
+          : [];
+
+        setMusteriSayisi(musteriler.totalCount);
+        setIslemler([
+          ...ilkIslemSayfasi.items,
+          ...digerSayfalar.flatMap((sayfa) => sayfa.items),
+        ]);
+        setKurTarihi(kur.tarih);
+      } catch (error) {
+        setHata(error instanceof Error ? error.message : "Dashboard verileri alınamadı.");
+      }
+    }
+
+    void dashboardVerileriniGetir();
+  }, []);
   const bugun = new Date().toDateString();
   const bugununIslemleri = islemler.filter((islem) => new Date(islem.islemTarihi).toDateString() === bugun);
   const toplamHacim = bugununIslemleri.reduce((toplam, islem) => toplam + islem.tlKarsiligi, 0);

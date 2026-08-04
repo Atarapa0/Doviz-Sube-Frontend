@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus, Search, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
@@ -14,25 +14,46 @@ export default function MusterilerPage() {
   const { musteriSec } = useMusteri();
   const [musteriler, setMusteriler] = useState<Musteri[]>([]);
   const [arama, setArama] = useState("");
+  const [gecikmeliArama, setGecikmeliArama] = useState("");
+  const [sayfa, setSayfa] = useState(1);
+  const [toplamKayit, setToplamKayit] = useState(0);
+  const [toplamSayfa, setToplamSayfa] = useState(1);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [mesaj, setMesaj] = useState("");
 
   useEffect(() => {
-    musterileriGetir()
-      .then(setMusteriler)
-      .catch((error: unknown) => setMesaj(error instanceof Error ? error.message : "Müşteriler alınamadı."))
-      .finally(() => setYukleniyor(false));
-  }, []);
+    const zamanlayici = window.setTimeout(() => setGecikmeliArama(arama.trim()), 300);
+    return () => window.clearTimeout(zamanlayici);
+  }, [arama]);
 
-  const filtrelenmisMusteriler = useMemo(() => {
-    const metin = arama.trim().toLocaleLowerCase("tr-TR");
-    if (!metin) return musteriler;
-    return musteriler.filter((musteri) =>
-      `${musteri.id} ${musteri.ad} ${musteri.soyad} ${musteri.sube.kod} ${musteri.sube.ad}`
-        .toLocaleLowerCase("tr-TR")
-        .includes(metin),
-    );
-  }, [arama, musteriler]);
+  useEffect(() => {
+    let iptalEdildi = false;
+
+    musterileriGetir({
+      page: sayfa,
+      pageSize: 20,
+      arama: gecikmeliArama || undefined,
+    })
+      .then((cevap) => {
+        if (iptalEdildi) return;
+        setMusteriler(cevap.items);
+        setToplamKayit(cevap.totalCount);
+        setToplamSayfa(Math.max(cevap.totalPages, 1));
+      })
+      .catch((error: unknown) => {
+        if (!iptalEdildi) {
+          setMusteriler([]);
+          setMesaj(error instanceof Error ? error.message : "Müşteriler alınamadı.");
+        }
+      })
+      .finally(() => {
+        if (!iptalEdildi) setYukleniyor(false);
+      });
+
+    return () => {
+      iptalEdildi = true;
+    };
+  }, [gecikmeliArama, sayfa]);
 
   async function musteriSeciminiYap(musteriId: number) {
     try {
@@ -62,7 +83,7 @@ export default function MusterilerPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <label className="relative block max-w-lg">
             <Search className="absolute left-3 top-3 size-4 text-slate-400" />
-            <input value={arama} onChange={(event) => setArama(event.target.value)} placeholder="ID, ad soyad veya şube ara" className="h-10 w-full rounded-md border border-slate-300 pl-10 pr-3 outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" />
+            <input value={arama} onChange={(event) => { setArama(event.target.value); setSayfa(1); setYukleniyor(true); setMesaj(""); }} placeholder="ID, ad soyad veya şube ara" className="h-10 w-full rounded-md border border-slate-300 pl-10 pr-3 outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" />
           </label>
           {mesaj && <p className="mt-3 text-sm font-medium text-[#0047b3]">{mesaj}</p>}
         </section>
@@ -72,7 +93,7 @@ export default function MusterilerPage() {
             <table className="w-full min-w-[850px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-600"><tr>{["Müşteri ID", "Ad Soyad", "Şube", "Hesap Sayısı", "Durum", ""].map((baslik) => <th key={baslik} className="px-6 py-3 font-semibold">{baslik}</th>)}</tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {filtrelenmisMusteriler.map((musteri) => (
+                {musteriler.map((musteri) => (
                   <tr key={musteri.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 font-semibold">{musteri.id}</td>
                     <td className="px-6 py-4">{musteri.ad} {musteri.soyad}</td>
@@ -82,10 +103,17 @@ export default function MusterilerPage() {
                     <td className="px-6 py-4 text-right"><button type="button" onClick={() => void musteriSeciminiYap(musteri.id)} className="rounded-md bg-[#0047b3] px-3 py-2 text-xs font-semibold text-white hover:bg-[#003b95]">Header&apos;a Seç</button></td>
                   </tr>
                 ))}
-                {!yukleniyor && filtrelenmisMusteriler.length === 0 && <tr><td colSpan={6} className="px-6 py-14 text-center text-slate-500">Müşteri bulunamadı.</td></tr>}
+                {!yukleniyor && musteriler.length === 0 && <tr><td colSpan={6} className="px-6 py-14 text-center text-slate-500">Müşteri bulunamadı.</td></tr>}
                 {yukleniyor && <tr><td colSpan={6} className="px-6 py-14 text-center text-slate-500">Müşteriler yükleniyor...</td></tr>}
               </tbody>
             </table>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-6 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-slate-500">Toplam {toplamKayit} müşteri · Sayfa {sayfa}/{toplamSayfa}</span>
+            <div className="flex gap-2">
+              <button type="button" disabled={sayfa <= 1 || yukleniyor} onClick={() => { setYukleniyor(true); setMesaj(""); setSayfa((onceki) => Math.max(1, onceki - 1)); }} className="rounded-md border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40">Önceki</button>
+              <button type="button" disabled={sayfa >= toplamSayfa || yukleniyor} onClick={() => { setYukleniyor(true); setMesaj(""); setSayfa((onceki) => onceki + 1); }} className="rounded-md border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40">Sonraki</button>
+            </div>
           </div>
         </section>
       </div>

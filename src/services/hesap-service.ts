@@ -1,6 +1,9 @@
 import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
 import { clientApiRequest } from "@/lib/client-api";
-import type { HesapHareketleriResponse } from "@/types/api";
+import type {
+  HesapHareketleriResponse,
+  MusteriTumHesapHareketleriResponse,
+} from "@/types/api";
 
 export function hesapAc(musteriId: string | number, dovizKodu: string) {
   return clientApiRequest<unknown>(NEXT_API_ENDPOINTS.musteriHesaplari(musteriId), {
@@ -16,5 +19,13 @@ export function hesapHareketleriniGetir(
 ) {
   return clientApiRequest<HesapHareketleriResponse>(
     NEXT_API_ENDPOINTS.hesapHareketleri(musteriId, hesapEkNo),
+  );
+}
+
+export function musteriTumHesapHareketleriniGetir(
+  musteriId: string | number,
+) {
+  return clientApiRequest<MusteriTumHesapHareketleriResponse>(
+    NEXT_API_ENDPOINTS.musteriTumHesapHareketleri(musteriId),
   );
 }

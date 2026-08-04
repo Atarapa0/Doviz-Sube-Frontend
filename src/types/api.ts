@@ -12,6 +12,26 @@ export type SubeOlusturRequest = {
   ad: string;
 };
 
+export type SayfaliResponse<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+export type MusteriListeParams = {
+  page?: number;
+  pageSize?: number;
+  arama?: string;
+  subeKodu?: string;
+};
+
+export type MusteriAramaParams = {
+  q: string;
+  limit?: number;
+};
+
 export type Musteri = {
   id: number;
   ad: string;
@@ -21,6 +41,15 @@ export type Musteri = {
   hesapSayisi: number;
   olusturmaTarihi: string;
   guncellemeTarihi: string;
+};
+
+export type MusteriAramaSonucu = {
+  id: number;
+  ad: string;
+  soyad: string;
+  aktifMi: boolean;
+  sube: Pick<Sube, "id" | "kod" | "ad">;
+  hesapSayisi: number;
 };
 
 export type Hesap = {
@@ -63,12 +92,20 @@ export type KurResponse = {
   kurlar: Kur[];
 };
 
+export type DovizIslemiListeParams = {
+  page?: number;
+  pageSize?: number;
+  subeKodu?: string;
+};
+
 type DovizBilgisi = {
+  id: number;
   kod: string;
   ad: string;
 };
 
 type IslemHesabi = {
+  hesapEkNo: number;
   dovizKodu: string;
   miktar: number;
   kur: number;
@@ -78,12 +115,34 @@ export type DovizIslemi = {
   id: number;
   referansNo: string;
   musteriId: number;
-  musteri: { id: number; ad: string; soyad: string };
-  odenenDoviz: DovizBilgisi & { odenenDovizId: number };
-  alinanDoviz: DovizBilgisi & { alinanDovizId: number };
-  borcluHesap: IslemHesabi & { borcluHesapEkNo: number };
-  alacakliHesap: IslemHesabi & { alacakliHesapEkNo: number };
+  musteri: {
+    id: number;
+    ad: string;
+    soyad: string;
+    sube: Pick<Sube, "id" | "kod" | "ad">;
+  };
+  odenenDoviz: DovizBilgisi;
+  alinanDoviz: DovizBilgisi;
+  borcluHesap: IslemHesabi;
+  alacakliHesap: IslemHesabi;
   tlKarsiligi: number;
+  islemTarihi: string;
+  tersKayitMi: boolean;
+  tersKayitOlusturulduMu: boolean;
+  orijinalReferansNo: string | null;
+  tersKayitReferansNo: string | null;
+  iptalNedeni: string | null;
+};
+
+export type DovizIslemiIptalRequest = {
+  iptalNedeni: string;
+};
+
+export type DovizIslemiIptalResponse = {
+  islemId: number;
+  orijinalReferansNo: string;
+  tersKayitReferansNo: string;
+  iptalNedeni: string;
   islemTarihi: string;
 };
 
@@ -97,6 +156,11 @@ export type HesapHareketi = {
   islemTarihi: string;
 };
 
+export type DovizIslemiDetayResponse = {
+  islem: DovizIslemi;
+  hesapHareketleri: HesapHareketi[];
+};
+
 export type HesapHareketleriResponse = {
   hesap: {
     musteriId: number;
@@ -107,6 +171,23 @@ export type HesapHareketleriResponse = {
     aktifMi: boolean;
   };
   hareketler: HesapHareketi[];
+};
+
+export type MusteriHesapHareketiHesabi = {
+  hesapEkNo: number;
+  dovizId: number;
+  dovizKodu: string;
+  dovizAdi: string;
+  bakiye: number;
+  aktifMi: boolean;
+  hareketler: HesapHareketi[];
+};
+
+export type MusteriTumHesapHareketleriResponse = {
+  musteriId: number;
+  ad: string;
+  soyad: string;
+  hesaplar: MusteriHesapHareketiHesabi[];
 };
 
 export type MusteriOlusturRequest = {
