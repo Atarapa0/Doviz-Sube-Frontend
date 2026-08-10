@@ -63,7 +63,7 @@ export default function Header() {
         <MusteriCombobox
           value={musteriId}
           onValueChange={musteriIdDegistir}
-          placeholder="Müşteri ID yazın veya listeden seçin"
+          placeholder="Müşteri ID veya ad soyad ile arayın"
           inputClassName="rounded-full"
         />
         {aramaMesaji && (

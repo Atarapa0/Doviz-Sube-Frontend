@@ -19,3 +19,11 @@ usecustomedu 1 tanesini çevirecem
 -----------------------------------
 rdx state yönetimi kutüphaneleri rediux
 redux toolkit
+
+--borçlu hesapda pop up açılsın ad soyadla da arma yapsın ektradan
+--hesap ahraketeri 193 comoanent yap
+--companents de sayfa içi hesaplam işi değil page den cağıracak şekilde yapılacak
+
+a--piyi compoenente göremecm doviz alış satışı pageden çağrılmıcak
+
+entitiy fremwork konuşacaz transiction yönetimi bakın. 
