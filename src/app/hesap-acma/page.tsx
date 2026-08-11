@@ -6,7 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
 import { useMusteri } from "@/components/providers/MusteriProvider";
-import MusteriCombobox from "@/components/ui/musteri-combobox";
+import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { paraYaz } from "@/lib/formatters";
 import { dovizleriGetir } from "@/services/doviz-service";
 import { hesapAc } from "@/services/hesap-service";

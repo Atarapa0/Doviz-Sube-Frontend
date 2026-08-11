@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus, Search, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type KeyboardEvent, useEffect, useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
@@ -14,7 +14,7 @@ export default function MusterilerPage() {
   const { musteriSec } = useMusteri();
   const [musteriler, setMusteriler] = useState<Musteri[]>([]);
   const [arama, setArama] = useState("");
-  const [gecikmeliArama, setGecikmeliArama] = useState("");
+  const [uygulananArama, setUygulananArama] = useState("");
   const [sayfa, setSayfa] = useState(1);
   const [toplamKayit, setToplamKayit] = useState(0);
   const [toplamSayfa, setToplamSayfa] = useState(1);
@@ -22,17 +22,12 @@ export default function MusterilerPage() {
   const [mesaj, setMesaj] = useState("");
 
   useEffect(() => {
-    const zamanlayici = window.setTimeout(() => setGecikmeliArama(arama.trim()), 300);
-    return () => window.clearTimeout(zamanlayici);
-  }, [arama]);
-
-  useEffect(() => {
     let iptalEdildi = false;
 
     musterileriGetir({
       page: sayfa,
       pageSize: 20,
-      arama: gecikmeliArama || undefined,
+      arama: uygulananArama || undefined,
     })
       .then((cevap) => {
         if (iptalEdildi) return;
@@ -53,7 +48,22 @@ export default function MusterilerPage() {
     return () => {
       iptalEdildi = true;
     };
-  }, [gecikmeliArama, sayfa]);
+  }, [uygulananArama, sayfa]);
+
+  function enterIleAra(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+
+    event.preventDefault();
+    const yeniArama = arama.trim();
+
+    // Aynı arama zaten ilk sayfada gösteriliyorsa tekrar API çağrısı yapma.
+    if (yeniArama === uygulananArama && sayfa === 1) return;
+
+    setMesaj("");
+    setYukleniyor(true);
+    setSayfa(1);
+    setUygulananArama(yeniArama);
+  }
 
   async function musteriSeciminiYap(musteriId: number) {
     try {
@@ -83,7 +93,7 @@ export default function MusterilerPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <label className="relative block max-w-lg">
             <Search className="absolute left-3 top-3 size-4 text-slate-400" />
-            <input value={arama} onChange={(event) => { setArama(event.target.value); setSayfa(1); setYukleniyor(true); setMesaj(""); }} placeholder="ID, ad soyad veya şube ara" className="h-10 w-full rounded-md border border-slate-300 pl-10 pr-3 outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" />
+            <input value={arama} onChange={(event) => setArama(event.target.value)} onKeyDown={enterIleAra} placeholder="ID, ad soyad veya şube yazıp Enter'a basın" className="h-10 w-full rounded-md border border-slate-300 pl-10 pr-3 outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" />
           </label>
           {mesaj && <p className="mt-3 text-sm font-medium text-[#0047b3]">{mesaj}</p>}
         </section>

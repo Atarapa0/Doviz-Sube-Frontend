@@ -11,7 +11,7 @@ import {
 } from "@/reducers/doviz-form-reducer";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MusteriCombobox from "@/components/ui/musteri-combobox";
+import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
 import {
   Table,
@@ -929,12 +929,14 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         />
                       </div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+                    <div style={{ display: "flex", flexDirection: "row", gap: "10px"}}>
                       <div style={{ width: "30%" }}>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <MusteriCombobox
                           value={borçluHesap}
-                          onValueChange={(id) => void hesapBilgisiGetir(id)}
+                          onValueChange={(musteriId) =>
+                            void hesapBilgisiGetir(musteriId)
+                          }
                         />
                       </div>
                       <div style={{ width: "12%" }}>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { HesapBakiyeleri } from "@/components/hesap-hareketleri/HesapBakiyeleri";
 import { useMusteri } from "@/components/providers/MusteriProvider";
-import MusteriCombobox from "@/components/ui/musteri-combobox";
+import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { paraYaz, tarihYaz } from "@/lib/formatters";
 import {
   hesapHareketleriniGetir,

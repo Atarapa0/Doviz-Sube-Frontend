@@ -4,7 +4,7 @@ import { Bell, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { useMusteri } from "@/components/providers/MusteriProvider";
-import MusteriCombobox from "@/components/ui/musteri-combobox";
+import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
 
 export default function Header() {
