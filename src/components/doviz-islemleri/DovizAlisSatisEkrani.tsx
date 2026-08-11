@@ -113,6 +113,65 @@ function hesapCevabiniDonustur(hesapCevabi: HesapResponse): Hesap[] {
   }));
 }
 
+function dovizeUygunHesapAnahtari(
+  dovizKodu: string,
+  hesaplar: Hesap[],
+  mevcutHesapAnahtari: string,
+) {
+  if (!dovizKodu) return "";
+
+  const mevcutHesap = hesaplar.find(
+    (hesap) => hesap.hesapAnahtari === mevcutHesapAnahtari,
+  );
+
+  if (mevcutHesap?.dovizKodu === dovizKodu) {
+    return mevcutHesapAnahtari;
+  }
+
+  const uygunHesaplar = hesaplar.filter(
+    (hesap) => hesap.aktifMi && hesap.dovizKodu === dovizKodu,
+  );
+
+  return uygunHesaplar.length === 1
+    ? uygunHesaplar[0].hesapAnahtari
+    : "";
+}
+
+function dovizHesapEslesmeUyarisi(
+  taraf: "borclu" | "alacakli",
+  dovizKodu: string,
+  hesaplar: Hesap[],
+  secilenHesapAnahtari: string,
+) {
+  if (!dovizKodu || hesaplar.length === 0) return "";
+
+  const secilenHesap = hesaplar.find(
+    (hesap) => hesap.hesapAnahtari === secilenHesapAnahtari,
+  );
+  const tarafAdi = taraf === "borclu" ? "borçlu" : "alacaklı";
+  const alanAdi = taraf === "borclu" ? "Ödenecek" : "Alınacak";
+
+  if (secilenHesap && secilenHesap.dovizKodu !== dovizKodu) {
+    return `${alanAdi} döviz ${dovizKodu}, fakat seçilen ${tarafAdi} hesap ${secilenHesap.dovizKodu}.`;
+  }
+
+  if (secilenHesap) return "";
+
+  const uygunHesapSayisi = hesaplar.filter(
+    (hesap) => hesap.aktifMi && hesap.dovizKodu === dovizKodu,
+  ).length;
+
+  if (uygunHesapSayisi === 0) {
+    return `Müşterinin aktif ${dovizKodu} ${tarafAdi} hesabı bulunmuyor.`;
+  }
+
+  if (uygunHesapSayisi > 1) {
+    return `${dovizKodu} için ${uygunHesapSayisi} hesap bulundu. Lütfen kullanılacak ek noyu seçin.`;
+  }
+
+  return "";
+}
+
 function birimKurunuBul(
   dovizKodu: string,
   kurTuru: "alis" | "satis",
@@ -301,12 +360,26 @@ export function DovizAlisSatisEkrani() {
 
   function alinacakDoviziDegistir(yeniDoviz: string) {
     dovizFormDispatch({ type: "ALINACAK_DOVIZ_DEGISTIR", payload: yeniDoviz });
+    setAlacakliHesapId((mevcutHesapAnahtari) =>
+      dovizeUygunHesapAnahtari(
+        yeniDoviz,
+        tumHesaplar,
+        mevcutHesapAnahtari,
+      ),
+    );
     const kaynakMiktar = sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
     karsiligiGuncelle(sonMiktarAlani, kaynakMiktar, yeniDoviz, odenecekDoviz);
   }
 
   function odenecekDoviziDegistir(yeniDoviz: string) {
     dovizFormDispatch({ type: "ODENECEK_DOVIZ_DEGISTIR", payload: yeniDoviz });
+    setSecilenEkNo((mevcutHesapAnahtari) =>
+      dovizeUygunHesapAnahtari(
+        yeniDoviz,
+        tumHesaplar,
+        mevcutHesapAnahtari,
+      ),
+    );
     const kaynakMiktar = sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
     karsiligiGuncelle(sonMiktarAlani, kaynakMiktar, alinacakDoviz, yeniDoviz);
   }
@@ -329,6 +402,12 @@ export function DovizAlisSatisEkrani() {
     setTumHesaplar(musteriHesaplari);
     setHesaplar(musteriHesaplari);
     setEkNolariDropdown(musteriHesaplari);
+    setSecilenEkNo(
+      dovizeUygunHesapAnahtari(odenecekDoviz, musteriHesaplari, ""),
+    );
+    setAlacakliHesapId(
+      dovizeUygunHesapAnahtari(alinacakDoviz, musteriHesaplari, ""),
+    );
     setMusteriAdi(`${hesapCevabi.ad} ${hesapCevabi.soyad}`);
     setSubeKodu(hesapCevabi.sube.kod);
     setSubeAdi(hesapCevabi.sube.ad);
@@ -441,10 +520,42 @@ export function DovizAlisSatisEkrani() {
     setSubeKodu(hesap.subeKodu);
     setSubeAdi(hesap.subeAdi);
     setHesapAramaMesaji("");
+
+    dovizFormDispatch({
+      type: "ODENECEK_DOVIZ_DEGISTIR",
+      payload: hesap.dovizKodu,
+    });
+    const kaynakMiktar =
+      sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
+    karsiligiGuncelle(
+      sonMiktarAlani,
+      kaynakMiktar,
+      alinacakDoviz,
+      hesap.dovizKodu,
+    );
   }
 
   function alacakliHesapSec(hesapAnahtari: string) {
     setAlacakliHesapId(hesapAnahtari);
+
+    const hesap = tumHesaplar.find(
+      (item) => item.hesapAnahtari === hesapAnahtari,
+    );
+
+    if (!hesap) return;
+
+    dovizFormDispatch({
+      type: "ALINACAK_DOVIZ_DEGISTIR",
+      payload: hesap.dovizKodu,
+    });
+    const kaynakMiktar =
+      sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
+    karsiligiGuncelle(
+      sonMiktarAlani,
+      kaynakMiktar,
+      hesap.dovizKodu,
+      odenecekDoviz,
+    );
   }
 
   function formTemizle() {
@@ -487,6 +598,16 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
   if (borcluHesap.musteriId !== alacakliHesap.musteriId) {
     alert("Borçlu ve alacaklı hesap aynı müşteriye ait olmalıdır.");
+    return;
+  }
+
+  if (
+    borcluHesap.dovizKodu !== odenecekDoviz ||
+    alacakliHesap.dovizKodu !== alinacakDoviz
+  ) {
+    alert(
+      "Seçilen döviz cinsleri ile borçlu/alacaklı hesapların döviz cinsleri eşleşmiyor.",
+    );
     return;
   }
 
@@ -563,6 +684,18 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
   );
   const secilenAlacakliHesap = tumHesaplar.find(
     (hesap) => hesap.hesapAnahtari === alacakliHesapId,
+  );
+  const borcluDovizUyarisi = dovizHesapEslesmeUyarisi(
+    "borclu",
+    odenecekDoviz,
+    tumHesaplar,
+    secilenEkNo,
+  );
+  const alacakliDovizUyarisi = dovizHesapEslesmeUyarisi(
+    "alacakli",
+    alinacakDoviz,
+    tumHesaplar,
+    alacakliHesapId,
   );
 
   return (
@@ -843,6 +976,11 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         {hesapAramaMesaji}
                       </p>
                     )}
+                    {borcluDovizUyarisi && (
+                      <p style={{ margin: "8px 0 0", color: "#b54708", fontSize: "12px", fontWeight: "bold" }}>
+                        {borcluDovizUyarisi}
+                      </p>
+                    )}
                   </div>
 
                   <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0" }}>
@@ -909,6 +1047,11 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         />
                       </div>
                     </div>
+                    {alacakliDovizUyarisi && (
+                      <p style={{ margin: "8px 0 0", color: "#b54708", fontSize: "12px", fontWeight: "bold" }}>
+                        {alacakliDovizUyarisi}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
