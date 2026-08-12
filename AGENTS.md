@@ -26,6 +26,8 @@ redux toolkit
 
 a--piyi compoenente göremecm doviz alış satışı pageden çağrılmıcak
 
+
+
 entitiy fremwork konuşacaz transiction yönetimi bakın.  doviz çevirin içinde  bakiye düşürme, bekiye ekleme ve dbye kaydet tek bi db contex ile transition alalım hata alırsak görelim
 
 
@@ -34,3 +36,7 @@ entitiy fremwork konuşacaz transiction yönetimi bakın.  doviz çevirin içind
 
 --Debounce tutatda kalsın müsteri getirde enter basınca bulsun
 arbinajdaki hesaplamaları api olarak yapıp apiden çağıracaz
+
+
+popupı portaldan cıkartarak is if open render  portal kısmına bak
+combobasda isim kısmını al ekle

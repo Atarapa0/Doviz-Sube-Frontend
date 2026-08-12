@@ -1,54 +1,40 @@
 "use client";
 
 import { ArrowRight, ArrowRightLeft, Info } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import AppShell from "@/components/layout/AppShell";
 import PageHeading from "@/components/layout/PageHeading";
 import { useMusteri } from "@/components/providers/MusteriProvider";
 import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { paraYaz } from "@/lib/formatters";
-import { dovizCevir, kurlariGetir } from "@/services/doviz-service";
+import { arbitrajHesapla } from "@/services/arbitraj-service";
+import { dovizCevir } from "@/services/doviz-service";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
-import type { Kur, MusteriHesapResponse } from "@/types/api";
-
-function birimKurunuBul(
-  dovizKodu: string,
-  kurTuru: "alis" | "satis",
-  kurlar: Kur[],
-) {
-  if (dovizKodu === "TRY") return 1;
-
-  const kur = kurlar.find((item) => item.kod === dovizKodu);
-  const deger = kurTuru === "alis" ? kur?.dovizAlis : kur?.dovizSatis;
-
-  if (!kur || deger == null) return null;
-  return deger / kur.birim;
-}
+import type { ArbitrajHesaplaResponse, MusteriHesapResponse } from "@/types/api";
 
 export default function ArbitrajPage() {
   const { musteriSec } = useMusteri();
   const [musteriId, setMusteriId] = useState("");
   const [musteri, setMusteri] = useState<MusteriHesapResponse | null>(null);
-  const [kurlar, setKurlar] = useState<Kur[]>([]);
   const [borcluEkNo, setBorcluEkNo] = useState("");
   const [alacakliEkNo, setAlacakliEkNo] = useState("");
   const [miktar, setMiktar] = useState("");
+  const [onizleme, setOnizleme] = useState<ArbitrajHesaplaResponse | null>(null);
+  const [hesaplamaMesaji, setHesaplamaMesaji] = useState("");
+  const [hesaplaniyor, setHesaplaniyor] = useState(false);
   const [mesaj, setMesaj] = useState("");
   const [basarili, setBasarili] = useState(false);
   const [isleniyor, setIsleniyor] = useState(false);
-
-  useEffect(() => {
-    kurlariGetir()
-      .then((response) => setKurlar(response.kurlar))
-      .catch(() => setMesaj("Kurlar alınamadığı için önizleme hesaplanamıyor."));
-  }, []);
+  const hesaplamaIstekIdRef = useRef(0);
 
   async function musteriGetir(id: string) {
     setMusteriId(id);
     setMusteri(null);
     setBorcluEkNo("");
     setAlacakliEkNo("");
+    setOnizleme(null);
+    setHesaplamaMesaji("");
     setMesaj("");
 
     if (!/^\d{6}$/.test(id)) {
@@ -71,27 +57,61 @@ export default function ArbitrajPage() {
   const alacakli = musteri?.hesaplar.find(
     (hesap) => hesap.hesapEkNo.toString() === alacakliEkNo,
   );
-  const hedefMiktar = Number(miktar);
-  const kaynakAlisKuru = borclu
-    ? birimKurunuBul(borclu.dovizKodu, "alis", kurlar)
+  const baslangicMiktari = Number(miktar);
+  const birinciAdim = onizleme?.adimlar[0] ?? null;
+  const kaynakMiktar = birinciAdim?.girisMiktari ?? null;
+  const hedefMiktar = birinciAdim?.cikisMiktari ?? null;
+  const caprazKur = birinciAdim
+    ? birinciAdim.kaynakAlisKuru / birinciAdim.hedefSatisKuru
     : null;
-  const hedefSatisKuru = alacakli
-    ? birimKurunuBul(alacakli.dovizKodu, "satis", kurlar)
-    : null;
-  const kaynakMiktar =
-    hedefMiktar > 0 && kaynakAlisKuru && hedefSatisKuru
-      ? (hedefMiktar * hedefSatisKuru) / kaynakAlisKuru
-      : null;
-  const caprazKur =
-    kaynakAlisKuru && hedefSatisKuru
-      ? kaynakAlisKuru / hedefSatisKuru
-      : null;
   const bakiyeYetersiz = Boolean(
     borclu && kaynakMiktar != null && kaynakMiktar > borclu.bakiye,
   );
   const onizlemeHazir = Boolean(
-    borclu && alacakli && kaynakMiktar != null && hedefMiktar > 0,
+    borclu && alacakli && kaynakMiktar != null && hedefMiktar != null,
   );
+
+  useEffect(() => {
+    const istekId = ++hesaplamaIstekIdRef.current;
+
+    if (
+      !borclu ||
+      !alacakli ||
+      !Number.isFinite(baslangicMiktari) ||
+      baslangicMiktari <= 0
+    ) {
+      return;
+    }
+
+    const zamanlayici = window.setTimeout(async () => {
+      setHesaplaniyor(true);
+      setHesaplamaMesaji("");
+
+      try {
+        const sonuc = await arbitrajHesapla({
+          baslangicDovizKodu: borclu.dovizKodu,
+          birinciAraDovizKodu: alacakli.dovizKodu,
+          ikinciAraDovizKodu: "TRY",
+          baslangicMiktari,
+        });
+
+        if (istekId !== hesaplamaIstekIdRef.current) return;
+        setOnizleme(sonuc);
+      } catch (error) {
+        if (istekId !== hesaplamaIstekIdRef.current) return;
+        setOnizleme(null);
+        setHesaplamaMesaji(
+          error instanceof Error
+            ? error.message
+            : "Arbitraj önizlemesi hesaplanamadı.",
+        );
+      } finally {
+        if (istekId === hesaplamaIstekIdRef.current) setHesaplaniyor(false);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(zamanlayici);
+  }, [alacakli, baslangicMiktari, borclu]);
 
   async function islemiYap(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -116,7 +136,7 @@ export default function ArbitrajPage() {
         musteriId: musteri.id,
         borcluHesapEkNo: borclu.hesapEkNo,
         alacakliHesapEkNo: alacakli.hesapEkNo,
-        odenecekDovizMiktari: hedefMiktar,
+        odenecekDovizMiktari: kaynakMiktar,
       });
       const referans =
         "referansNo" in sonuc ? ` Referans: ${String(sonuc.referansNo)}` : "";
@@ -127,6 +147,7 @@ export default function ArbitrajPage() {
       setBasarili(true);
       setMesaj(`Arbitraj işlemi başarılı.${referans}`);
       setMiktar("");
+      setOnizleme(null);
     } catch (error) {
       setMesaj(error instanceof Error ? error.message : "Arbitraj işlemi yapılamadı.");
     } finally {
@@ -168,6 +189,8 @@ export default function ArbitrajPage() {
                 onChange={(event) => {
                   setBorcluEkNo(event.target.value);
                   setAlacakliEkNo("");
+                  setOnizleme(null);
+                  setHesaplamaMesaji("");
                 }}
                 className="h-10 rounded-md border border-slate-300 bg-white px-3 font-normal"
               >
@@ -187,7 +210,11 @@ export default function ArbitrajPage() {
                 required
                 disabled={!borcluEkNo}
                 value={alacakliEkNo}
-                onChange={(event) => setAlacakliEkNo(event.target.value)}
+                onChange={(event) => {
+                  setAlacakliEkNo(event.target.value);
+                  setOnizleme(null);
+                  setHesaplamaMesaji("");
+                }}
                 className="h-10 rounded-md border border-slate-300 bg-white px-3 font-normal"
               >
                 <option value="">Seçiniz</option>
@@ -203,14 +230,18 @@ export default function ArbitrajPage() {
             </label>
 
             <label className="flex flex-col gap-2 text-sm font-semibold">
-              Alacaklı Hesaba Geçecek Miktar
+              Başlangıç Miktarı
               <input
                 required
                 type="number"
                 min="1"
                 step="0.0001"
                 value={miktar}
-                onChange={(event) => setMiktar(event.target.value)}
+                onChange={(event) => {
+                  setMiktar(event.target.value);
+                  setOnizleme(null);
+                  setHesaplamaMesaji("");
+                }}
                 placeholder="0,00"
                 className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100"
               />
@@ -236,18 +267,38 @@ export default function ArbitrajPage() {
             </p>
           )}
 
+          {hesaplamaMesaji && (
+            <p className="mt-5 rounded-md bg-amber-50 p-3 text-sm font-semibold text-amber-700">
+              {hesaplamaMesaji}
+            </p>
+          )}
+
           <div className="mt-6 flex justify-end">
             <button
-              disabled={!onizlemeHazir || bakiyeYetersiz || isleniyor}
+              disabled={
+                !onizlemeHazir ||
+                bakiyeYetersiz ||
+                hesaplaniyor ||
+                isleniyor
+              }
               type="submit"
               className="h-10 rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isleniyor ? "Gerçekleştiriliyor..." : "Arbitrajı Gerçekleştir"}
+              {hesaplaniyor
+                ? "Hesaplanıyor..."
+                : isleniyor
+                  ? "Gerçekleştiriliyor..."
+                  : "Arbitrajı Gerçekleştir"}
             </button>
           </div>
         </form>
 
-        {onizlemeHazir && musteri && borclu && alacakli && kaynakMiktar != null && (
+        {onizlemeHazir &&
+          musteri &&
+          borclu &&
+          alacakli &&
+          kaynakMiktar != null &&
+          hedefMiktar != null && (
           <section className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -258,7 +309,7 @@ export default function ArbitrajPage() {
                 </p>
               </div>
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[#0047b3]">
-                Tahmini
+                API Hesabı
               </span>
             </div>
 
@@ -344,10 +395,13 @@ export default function ArbitrajPage() {
             <div className="mt-4 flex gap-2 rounded-md bg-slate-50 p-3 text-xs leading-5 text-slate-600">
               <Info className="mt-0.5 size-4 shrink-0 text-[#0047b3]" />
               <p>
-                Bu önizleme güncel kur listesindeki {borclu.dovizKodu} alış ve{" "}
-                {alacakli.dovizKodu} satış kurlarıyla hesaplanır. Backend&apos;de ayrı
-                bir arbitraj önizleme endpointi olmadığı için kesin tutar işlem
-                anında farklı olabilir.
+                Bu önizleme backend tarafından {borclu.dovizKodu} →{" "}
+                {alacakli.dovizKodu} → TRY → {borclu.dovizKodu} rotasıyla,
+                {onizleme?.kurTarihi ? ` ${onizleme.kurTarihi} tarihli` : " güncel"}{" "}
+                TCMB kurları kullanılarak hesaplandı. {onizleme?.aciklama}{" "}
+                Başlangıç sonunda {onizleme && paraYaz(onizleme.sonMiktar, onizleme.baslangicDovizKodu)};
+                kâr/zarar {onizleme && paraYaz(onizleme.karZararTutari, onizleme.baslangicDovizKodu)}
+                ({onizleme?.karZararOrani.toFixed(4)}%).
               </p>
             </div>
           </section>

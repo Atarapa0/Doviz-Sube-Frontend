@@ -203,3 +203,33 @@ export type DovizCevirRequest = {
   alacakliHesapEkNo: number;
   odenecekDovizMiktari: number;
 };
+
+export type ArbitrajHesaplaRequest = {
+  baslangicDovizKodu: string;
+  birinciAraDovizKodu: string;
+  ikinciAraDovizKodu: string;
+  baslangicMiktari: number;
+};
+
+export type ArbitrajAdimi = {
+  sira: number;
+  kaynakDovizKodu: string;
+  hedefDovizKodu: string;
+  girisMiktari: number;
+  kaynakAlisKuru: number;
+  hedefSatisKuru: number;
+  tlKarsiligi: number;
+  cikisMiktari: number;
+};
+
+export type ArbitrajHesaplaResponse = {
+  kurTarihi: string | null;
+  baslangicDovizKodu: string;
+  baslangicMiktari: number;
+  adimlar: ArbitrajAdimi[];
+  sonMiktar: number;
+  karZararTutari: number;
+  karZararOrani: number;
+  arbitrajFirsatiVarMi: boolean;
+  aciklama: string;
+};
