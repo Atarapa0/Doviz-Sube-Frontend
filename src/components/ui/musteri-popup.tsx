@@ -2,7 +2,6 @@
 
 import { Search, Trash2, UserRound, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,16 +72,15 @@ export default function MusteriPopup({
 
   useEffect(() => {
     if (!isOpen) return;
-
     function escapeIleKapat(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" ) onClose();
+     // if (event.key === "Enter" /*&& secilenMusteri) onMusteriSec(secilenMusteri.id.toString());*/) secimiKullan();
     }
 
     document.addEventListener("keydown", escapeIleKapat);
     return () => document.removeEventListener("keydown", escapeIleKapat);
   }, [isOpen, onClose]);
 
-  if (!isOpen || typeof document === "undefined") return null;
 
   function kriteriDegistir(alan: keyof AramaKriterleri, value: string) {
     const yeniDeger =
@@ -91,7 +89,6 @@ export default function MusteriPopup({
         : value;
     setKriterler((mevcut) => ({ ...mevcut, [alan]: yeniDeger }));
   }
-
   function temizle() {
     setKriterler(bosKriterler);
     setSonuclar([]);
@@ -172,12 +169,12 @@ export default function MusteriPopup({
 
   function secimiKullan() {
     if (!secilenMusteri) return;
-    onMusteriSec(secilenMusteri.id.toString());
+    onMusteriSec(secilenMusteri.id. toString());
     onClose();
   }
 
-  return createPortal(
-    <div
+  if (!isOpen ) return null;
+  return (<div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -339,7 +336,5 @@ export default function MusteriPopup({
           <Button type="button" disabled={!secilenMusteri || hesaplarYukleniyor} onClick={secimiKullan} className="bg-[#0047b3] text-white hover:bg-[#00398f]">Seçili Müşteriyi Kullan</Button>
         </footer>
       </section>
-    </div>,
-    document.body,
-  );
+    </div>);
 }

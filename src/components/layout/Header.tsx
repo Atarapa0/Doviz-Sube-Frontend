@@ -4,8 +4,8 @@ import { Bell, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { useMusteri } from "@/components/providers/MusteriProvider";
-import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { musteriHesaplariniGetir } from "@/services/musteri-service";
+import MusteriSearch from "../ui/musteri-search";
 
 export default function Header() {
   const { secilenMusteri, musteriSec } = useMusteri();
@@ -60,12 +60,13 @@ export default function Header() {
       </span>
 
       <div className="relative order-3 w-full max-w-md lg:order-none">
-        <MusteriCombobox
+        <MusteriSearch
           value={musteriId}
-          onValueChange={musteriIdDegistir}
-          placeholder="Müşteri ID veya ad soyad ile arayın"
+            onValueChange={musteriIdDegistir}  
+             adSoyadAranabilir={true}
+             placeholder="Müşteri ID veya ad soyad ile arayın"
           inputClassName="rounded-full"
-        />
+            />
         {aramaMesaji && (
           <span className="absolute left-4 top-11 text-[11px] font-medium text-amber-700">
             {aramaMesaji}

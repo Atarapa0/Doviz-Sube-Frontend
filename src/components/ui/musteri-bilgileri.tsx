@@ -50,11 +50,19 @@ export default function MusteriNumberEntry({
     onValueChange(gorunenMusteriNo);
   }
 
+  //BURASI AYNI KALACAK 
   function popupSeciminiUygula(musteriId: string) {
     setTaslakMusteriNo(null);
     setUyari("");
     onValueChange(musteriId);
   }
+  function popupAc() {
+  setPopupAcik(true);
+}
+
+function popupKapat() {
+  setPopupAcik(false);
+}
 
   return (
     <div className={cn("relative", className)}>
@@ -79,7 +87,7 @@ export default function MusteriNumberEntry({
         type="button"
         disabled={disabled}
         aria-label="Müşteri arama penceresini aç"
-        onClick={() => setPopupAcik(true)}
+        onClick={() => popupAc()}
         className="absolute right-1 top-1 flex size-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-[#0047b3] disabled:pointer-events-none"
       >
         <Search className="size-4" />
@@ -87,7 +95,7 @@ export default function MusteriNumberEntry({
 
       <MusteriPopup
         isOpen={popupAcik}
-        onClose={() => setPopupAcik(false)}
+        onClose={() => popupKapat()}
         onMusteriSec={popupSeciminiUygula}
       />
 

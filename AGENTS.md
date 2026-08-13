@@ -40,3 +40,4 @@ arbinajdaki hesaplamaları api olarak yapıp apiden çağıracaz
 
 popupı portaldan cıkartarak is if open render  portal kısmına bak
 combobasda isim kısmını al ekle
+
