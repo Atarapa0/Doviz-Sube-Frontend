@@ -1,7 +1,8 @@
 "use client";
 
 import { Search, Trash2, UserRound, X } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,9 +98,7 @@ export default function MusteriPopup({
     setHata("");
   }
 
-  async function ara(event?: FormEvent) {
-    event?.preventDefault();
-    event?.stopPropagation();
+  async function ara() {
     setAraniyor(true);
     setHata("");
     setSecilenMusteri(null);
@@ -146,6 +145,20 @@ export default function MusteriPopup({
     } finally {
       setAraniyor(false);
     }
+  }
+
+  function enterIleAra(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (
+      event.key !== "Enter" ||
+      araniyor ||
+      (event.target as HTMLElement).closest("button")
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void ara();
   }
 
   async function musteriSatiriniSec(musteri: MusteriAramaSonucu) {
@@ -210,7 +223,10 @@ export default function MusteriPopup({
         </div>
 
         <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto bg-slate-50 p-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <form onSubmit={(event) => void ara(event)} className="h-fit rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div
+            onKeyDown={enterIleAra}
+            className="h-fit rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+          >
             <h3 className="mb-4 text-sm font-bold text-[#0047b3]">Arama Kriterleri</h3>
             <div className="space-y-4">
               <label className="block text-xs font-semibold text-slate-700">
@@ -234,10 +250,15 @@ export default function MusteriPopup({
                 <Input value={kriterler.subeAdi} onChange={(event) => kriteriDegistir("subeAdi", event.target.value)} className="mt-1 h-10" />
               </label>
             </div>
-            <Button type="submit" disabled={araniyor} className="mt-5 h-10 w-full bg-[#0047b3] text-white hover:bg-[#00398f]">
+            <Button
+              type="button"
+              onClick={() => void ara()}
+              disabled={araniyor}
+              className="mt-5 h-10 w-full bg-[#0047b3] text-white hover:bg-[#00398f]"
+            >
               <Search /> {araniyor ? "Aranıyor..." : "Müşteri Ara"}
             </Button>
-          </form>
+          </div>
 
           <div className="grid min-h-[560px] gap-4 grid-rows-[minmax(250px,1fr)_minmax(220px,0.8fr)]">
             <section className="min-h-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
