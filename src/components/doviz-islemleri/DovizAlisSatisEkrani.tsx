@@ -2,9 +2,14 @@
 
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { NEXT_API_ENDPOINTS } from "@/constants/api-endpoints";
 import { publicDegiskenler } from "@/lib/public-degiskenler";
 import { useMusteri } from "@/components/providers/MusteriProvider";
+import {
+  dovizCevir,
+  dovizleriGetir,
+  kurlariGetir,
+} from "@/services/doviz-service";
+import { musteriHesaplariniGetir } from "@/services/musteri-service";
 import {
   dovizFormReducer,
   initialDovizFormState,
@@ -94,11 +99,6 @@ type DovizCevirRequest = {
   borcluHesapEkNo: number;
   alacakliHesapEkNo: number;
   odenecekDovizMiktari: number;
-};
-
-type KurResponse = {
-  tarih: string;
-  kurlar: Kur[];
 };
 
 function hesapCevabiniDonustur(hesapCevabi: HesapResponse): Hesap[] {
@@ -271,34 +271,20 @@ export function DovizAlisSatisEkrani() {
     async function dovizVeKurlariGetir() {
       try {
         setHata("");
-        const [dovizResponse, kurResponse] = await Promise.all([
-          fetch(NEXT_API_ENDPOINTS.dovizler),
-          fetch(NEXT_API_ENDPOINTS.kurlar),
+        const [dovizData, kurSonucu] = await Promise.all([
+          dovizleriGetir(),
+          kurlariGetir(),
         ]);
-
-        if (!dovizResponse.ok || !kurResponse.ok) {
-          throw new Error(
-            `API isteği başarısız: döviz=${dovizResponse.status}, kur=${kurResponse.status}`,
-          );
-        }
-
-        const dovizData: unknown = await dovizResponse.json();
-        const kurData: unknown = await kurResponse.json();
 
         if (!Array.isArray(dovizData)) {
           throw new Error("API beklenen döviz listesini döndürmedi.");
         }
 
-        if (
-          typeof kurData !== "object" ||
-          kurData === null ||
-          !Array.isArray((kurData as KurResponse).kurlar)
-        ) {
+        if (!Array.isArray(kurSonucu.kurlar)) {
           throw new Error("API beklenen kur listesini döndürmedi.");
         }
 
-        const kurSonucu = kurData as KurResponse;
-        setDovizler(dovizData as Doviz[]);
+        setDovizler(dovizData);
         setKurlar(kurSonucu.kurlar);
         setKurTarihi(kurSonucu.tarih);
       } catch (error) {
@@ -458,26 +444,11 @@ export function DovizAlisSatisEkrani() {
     setHesapAramaMesaji("Müşteri bilgileri getiriliyor...");
 
     try {
-      const response = await fetch(
-        NEXT_API_ENDPOINTS.musteriHesaplari(musteriId),
-      );
-      const data: unknown = await response.json();
+      const data = await musteriHesaplariniGetir(musteriId);
 
       if (aramaId !== hesapAramaIdRef.current) return;
 
-      if (!response.ok) {
-        const mesaj =
-          typeof data === "object" && data !== null && "mesaj" in data
-            ? String(data.mesaj)
-            : "Müşteri bilgileri alınamadı.";
-        throw new Error(mesaj);
-      }
-
-      if (
-        typeof data !== "object" ||
-        data === null ||
-        !Array.isArray((data as HesapResponse).hesaplar)
-      ) {
+      if (!Array.isArray(data.hesaplar)) {
         throw new Error("Müşteri hesap cevabı beklenen formatta değil.");
       }
 
@@ -619,23 +590,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
   };
 
   try {
-    const response = await fetch(NEXT_API_ENDPOINTS.dovizCevir, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result: unknown = await response.json();
-
-    if (!response.ok) {
-      const message =
-        typeof result === "object" && result !== null && "mesaj" in result
-          ? String(result.mesaj)
-          : typeof result === "object" && result !== null && "message" in result
-            ? String(result.message)
-            : "Döviz işlemi gerçekleştirilemedi.";
-      throw new Error(message);
-    }
+    const result = await dovizCevir(payload);
 
     const gercekReferans =
       typeof result === "object" && result !== null && "referansNo" in result
@@ -648,19 +603,10 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
     }
 
     try {
-      const hesapResponse = await fetch(
-        NEXT_API_ENDPOINTS.musteriHesaplari(secilenMusteri),
-      );
-      const hesapData: unknown = await hesapResponse.json();
-
-      if (!hesapResponse.ok) {
-        throw new Error("Güncel hesap bakiyeleri alınamadı.");
-      }
+      const hesapData = await musteriHesaplariniGetir(secilenMusteri);
 
       if (
-        typeof hesapData !== "object" ||
-        hesapData === null ||
-        !Array.isArray((hesapData as HesapResponse).hesaplar)
+        !Array.isArray(hesapData.hesaplar)
       ) {
         throw new Error("Güncel hesap cevabı beklenen formatta değil.");
       }

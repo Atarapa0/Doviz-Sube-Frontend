@@ -41,3 +41,11 @@ arbinajdaki hesaplamaları api olarak yapıp apiden çağıracaz
 popupı portaldan cıkartarak is if open render  portal kısmına bak
 combobasda isim kısmını al ekle
 
+kibana dan da loglamaları tutalım 
+aynı zamanda da veritabanınaın da loglamaları yapalım 
+
+
+işlem geçmişinde detay sayfası oluştur popup gibi açılsın 
+müsteriler sayfassında header seçin yanında detay olsun o da aynı mantıkta ek nolarını bakiyelerinid felan detay sayfası görülsün
+şubelerdeki detay sayfasın da yapalım onda şubeye ait müşterileri ferlan olsun 
+
