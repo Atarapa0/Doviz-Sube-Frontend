@@ -27,7 +27,7 @@ function guvenliDonusAdresi(value: string | string[] | undefined) {
 export default async function HataPage({ searchParams }: HataPageProps) {
   const params = await searchParams;
   const gelenStatus = Number(tekDeger(params.status));
-  const status = [404, 500, 502, 503].includes(gelenStatus)
+  const status = [404, 500, 502, 503, 504].includes(gelenStatus)
     ? gelenStatus
     : 500;
 

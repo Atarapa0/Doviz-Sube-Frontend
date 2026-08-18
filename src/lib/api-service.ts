@@ -1,3 +1,5 @@
+import { apiHatasiniNormalizeEt } from "@/lib/http-error";
+
 type QueryValue = string | number | boolean;
 
 type ApiRequestOptions = {
@@ -47,10 +49,12 @@ async function apiRequest<T>(
 
   const responseText = await response.text();
   let data: unknown = null;
+  let jsonCozumlendi = false;
 
   if (responseText) {
     try {
       data = JSON.parse(responseText);
+      jsonCozumlendi = true;
     } catch {
       data = { message: responseText };
     }
@@ -59,7 +63,14 @@ async function apiRequest<T>(
   if (!response.ok) {
     throw new ApiServiceError(
       response.status,
-      data ?? { message: `API isteği başarısız: ${response.status}` },
+      apiHatasiniNormalizeEt(data, response.status, response.headers),
+    );
+  }
+
+  if (responseText && !jsonCozumlendi) {
+    throw new ApiServiceError(
+      502,
+      apiHatasiniNormalizeEt(null, 502, response.headers),
     );
   }
 

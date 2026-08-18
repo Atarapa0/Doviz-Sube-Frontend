@@ -36,6 +36,10 @@ const hataMetinleri: Record<number, { baslik: string; mesaj: string }> = {
     baslik: "Servis geçici olarak kullanılamıyor",
     mesaj: "Bağlı servislerden biri şu anda yanıt vermiyor.",
   },
+  504: {
+    baslik: "API zamanında yanıt vermedi",
+    mesaj: "Sunucu isteği zaman aşımına uğradı. Lütfen yeniden deneyin.",
+  },
 };
 
 export default function ErrorPanel({
@@ -48,7 +52,10 @@ export default function ErrorPanel({
   tekrarDeneAdresi,
 }: ErrorPanelProps) {
   const metin = hataMetinleri[status] ?? hataMetinleri[500];
-  const BaglantiIkonu = status === 502 || status === 503 ? ServerOff : AlertTriangle;
+  const BaglantiIkonu =
+    status === 502 || status === 503 || status === 504
+      ? ServerOff
+      : AlertTriangle;
 
   function yenidenDene() {
     if (onRetry) {

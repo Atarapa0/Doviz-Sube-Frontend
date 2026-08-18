@@ -3,7 +3,7 @@ import {
   hataSayfasindaGosterilmeli,
   hataSayfasinaGit,
 } from "@/lib/api-error";
-import type { ApiHataResponse } from "@/types/error";
+import { apiHatasiniNormalizeEt } from "@/lib/http-error";
 
 export async function clientApiRequest<T>(
   url: string,
@@ -25,71 +25,34 @@ export async function clientApiRequest<T>(
 
   const text = await response.text();
   let data: unknown = null;
+  let jsonCozumlendi = false;
 
   if (text) {
     try {
       data = JSON.parse(text);
+      jsonCozumlendi = true;
     } catch {
       data = { message: text };
     }
   }
 
   if (!response.ok) {
-    const validationMessage =
-      typeof data === "object" &&
-      data !== null &&
-      "errors" in data &&
-      typeof data.errors === "object" &&
-      data.errors !== null
-        ? Object.values(data.errors)
-            .flatMap((messages) => (Array.isArray(messages) ? messages : []))
-            .map(String)
-            .join(" ")
-        : "";
-    const mesaj =
-      typeof data === "object" && data !== null && "mesaj" in data
-        ? String(data.mesaj)
-        : typeof data === "object" && data !== null && "message" in data
-          ? String(data.message)
-          : validationMessage
-            ? validationMessage
-          : `API isteği başarısız: ${response.status}`;
-
-    const apiHatasi = new ClientApiError({
-      status:
-        typeof data === "object" &&
-        data !== null &&
-        "status" in data &&
-        Number.isInteger(Number(data.status))
-          ? Number(data.status)
-          : response.status,
-      hataKodu:
-        typeof data === "object" && data !== null && "hataKodu" in data
-          ? String(data.hataKodu)
-          : response.status === 404
-            ? "KAYNAK_BULUNAMADI"
-            : response.status >= 500
-              ? "API_BAGLANTI_HATASI"
-              : "ISTEK_BASARISIZ",
-      mesaj,
-      hataId:
-        typeof data === "object" && data !== null && "hataId" in data
-          ? String(data.hataId)
-          : undefined,
-      correlationId:
-        typeof data === "object" && data !== null && "correlationId" in data
-          ? String(data.correlationId)
-          : response.headers.get("X-Correlation-ID") || undefined,
-      timestamp:
-        typeof data === "object" && data !== null && "timestamp" in data
-          ? String(data.timestamp)
-          : undefined,
-    } satisfies ApiHataResponse);
+    const apiHatasi = new ClientApiError(
+      apiHatasiniNormalizeEt(data, response.status, response.headers),
+    );
 
     if (hataSayfasindaGosterilmeli(apiHatasi.status)) {
       hataSayfasinaGit(apiHatasi);
     }
 
+    throw apiHatasi;
+  }
+
+  if (text && !jsonCozumlendi) {
+    const apiHatasi = new ClientApiError(
+      apiHatasiniNormalizeEt(null, 502, response.headers),
+    );
+    hataSayfasinaGit(apiHatasi);
     throw apiHatasi;
   }
 
