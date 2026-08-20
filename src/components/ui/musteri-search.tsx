@@ -43,15 +43,12 @@ export default function MusteriSearch({
     const arama = aramaMetni.trim();
 
     if (!listeAcik || !arama) {
-      setSonuclar([]);
       return;
     }
 
     const sadeceRakam = /^\d+$/.test(arama);
 
     if (!adSoyadAranabilir && !sadeceRakam) {
-      setSonuclar([]);
-      setHata("Bu alanda yalnızca müşteri numarasıyla arama yapılabilir.");
       return;
     }
 
@@ -117,6 +114,11 @@ export default function MusteriSearch({
     kullaniciYaziyorRef.current = true;
     setAramaMetni(deger.slice(0, 100));
     setListeAcik(true);
+
+    if (!deger.trim()) {
+      setSonuclar([]);
+      setHata("");
+    }
 
     // Kullanıcı yeni aramaya başladığı için önceki seçimi temizle.
     onValueChangeRef.current("");

@@ -54,7 +54,7 @@ export default function YeniSubePage() {
 
         <form
           onSubmit={kaydet}
-          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <h2 className="mb-6 text-lg font-bold text-slate-900">Şube Bilgileri</h2>
           <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
@@ -99,7 +99,7 @@ export default function YeniSubePage() {
             <button
               disabled={kaydediliyor}
               type="submit"
-              className="h-10 rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:opacity-50"
+              className="h-10 w-full rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:opacity-50 sm:w-auto"
             >
               {kaydediliyor ? "Oluşturuluyor..." : "Şubeyi Oluştur"}
             </button>

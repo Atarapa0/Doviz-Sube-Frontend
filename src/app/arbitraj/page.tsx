@@ -169,7 +169,7 @@ export default function ArbitrajPage() {
 
         <form
           onSubmit={islemiYap}
-          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             <label className="flex flex-col gap-2 text-sm font-semibold">
@@ -282,7 +282,7 @@ export default function ArbitrajPage() {
                 isleniyor
               }
               type="submit"
-              className="h-10 rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 w-full rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {hesaplaniyor
                 ? "Hesaplanıyor..."
@@ -299,7 +299,7 @@ export default function ArbitrajPage() {
           alacakli &&
           kaynakMiktar != null &&
           hedefMiktar != null && (
-          <section className="rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-[#0047b3]">İşlem Önizlemesi</h2>
@@ -345,7 +345,7 @@ export default function ArbitrajPage() {
 
               <div className="flex flex-col items-center justify-center gap-2 px-3 text-center">
                 <span className="flex size-11 items-center justify-center rounded-full bg-blue-50 text-[#0047b3]">
-                  <ArrowRight className="size-5" />
+                  <ArrowRight className="size-5 rotate-90 lg:rotate-0" />
                 </span>
                 {caprazKur != null && (
                   <p className="max-w-40 text-xs font-semibold text-slate-600">

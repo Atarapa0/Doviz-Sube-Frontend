@@ -47,7 +47,7 @@ export default function YeniMusteriPage() {
 
   return <AppShell><div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6">
     <PageHeading title="Yeni Müşteri" description="Müşteri bilgilerini backend'e kaydedin. Başlangıç bakiyesi TRY hesabına uygulanır." icon={BadgePlus} />
-    <form onSubmit={kaydet} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form onSubmit={kaydet} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <h2 className="mb-6 text-lg font-bold text-slate-900">Müşteri Bilgileri</h2>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="flex flex-col gap-2 text-sm font-semibold">Ad<input required maxLength={100} value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Müşteri adı" className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" /></label>
@@ -68,7 +68,7 @@ export default function YeniMusteriPage() {
         <label className="flex flex-col gap-2 text-sm font-semibold">Başlangıç TRY Bakiyesi<input required type="number" min="0" step="0.01" value={bakiye} onChange={(e) => setBakiye(e.target.value)} className="h-10 rounded-md border border-slate-300 px-3 font-normal outline-none focus:border-[#0047b3] focus:ring-2 focus:ring-blue-100" /></label>
       </div>
       {mesaj && <p className={`mt-5 rounded-md p-3 text-sm font-semibold ${basarili ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{mesaj}</p>}
-      <div className="mt-6 flex justify-end"><button disabled={kaydediliyor || !subeKodu} type="submit" className="h-10 rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:opacity-50">{kaydediliyor ? "Kaydediliyor..." : "Müşteriyi Kaydet"}</button></div>
+      <div className="mt-6 flex justify-end"><button disabled={kaydediliyor || !subeKodu} type="submit" className="h-10 w-full rounded-md bg-[#0047b3] px-6 text-sm font-semibold text-white hover:bg-[#003b95] disabled:opacity-50 sm:w-auto">{kaydediliyor ? "Kaydediliyor..." : "Müşteriyi Kaydet"}</button></div>
     </form>
   </div></AppShell>;
 }

@@ -85,7 +85,7 @@ export default function MusterilerPage() {
           <PageHeading title="Müşteriler" description="API'den gelen müşterileri arayın ve aktif müşteri olarak seçin." icon={Users} />
           <Link
             href="/yeni-musteri"
-            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95]"
+            className="flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95] sm:w-auto"
           >
             <Plus className="size-4" />
             Yeni Müşteri Ekle
@@ -137,9 +137,9 @@ export default function MusterilerPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-6 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <span className="text-slate-500">Toplam {toplamKayit} müşteri · Sayfa {sayfa}/{toplamSayfa}</span>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               <button type="button" disabled={sayfa <= 1 || yukleniyor} onClick={() => { setYukleniyor(true); setMesaj(""); setSayfa((onceki) => Math.max(1, onceki - 1)); }} className="rounded-md border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40">Önceki</button>
               <button type="button" disabled={sayfa >= toplamSayfa || yukleniyor} onClick={() => { setYukleniyor(true); setMesaj(""); setSayfa((onceki) => onceki + 1); }} className="rounded-md border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40">Sonraki</button>
             </div>

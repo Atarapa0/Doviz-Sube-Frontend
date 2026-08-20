@@ -1,7 +1,6 @@
 "use client";
 
-import Header from "@/components/layout/Header";
-import Sidebar from "@/components/layout/Sidebar";
+import AppShell from "@/components/layout/AppShell";
 import { publicDegiskenler } from "@/lib/public-degiskenler";
 import { useMusteri } from "@/components/providers/MusteriProvider";
 import {
@@ -14,7 +13,6 @@ import {
   dovizFormReducer,
   initialDovizFormState,
 } from "@/reducers/doviz-form-reducer";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
@@ -28,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  CSSProperties,
   FormEvent,
   useEffect,
   useReducer,
@@ -645,36 +642,24 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
   );
 
   return (
-    <SidebarProvider
-      style={{ "--sidebar-width": "260px" } as CSSProperties}
-      className="bg-[#f9fafb]"
-    >
-
-      {/* Sol Menü */}
-      <Sidebar />
-
-      {/* Sağ Taraf Kapsayıcı */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-
-        {/* Üst Bilgi */}
-        <Header />
-        <main style={{ padding: "30px" }}>
+    <AppShell>
+      <div className="mx-auto flex w-full max-w-[1600px] min-w-0 flex-col gap-4">
 
 
           {yukleniyor && <p>Dövizler yükleniyor...</p>}
           {hata && <p style={{ color: "#b42318", fontWeight: "bold" }}>{hata}</p>}
 
           {!yukleniyor && !hata && (
-            <form style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", flexDirection: "row" }}>
+            <form className="flex min-w-0 flex-col rounded-xl border border-[#e0e0e0] bg-white p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                 <h1 style={{ marginTop: 0, marginBottom: "20px", fontWeight: "bold", color: "#5a62d4", fontSize: "24px" }}>İşlem Bilgisi</h1>
-                <span style={{ marginLeft: "auto", color: "#667085", fontSize: "12px" }}>Kur tarihi: {kurTarihi}</span>
+                <span className="text-xs text-[#667085]">Kur tarihi: {kurTarihi}</span>
               </div>
 
               <input type="hidden" name="islemTipi" value={islemTipi} />
 
-              <div style={{ display: "flex", alignItems: "flex-end", gap: "20px", flexWrap: "wrap", marginBottom: "28px" }}>
-                <div style={{ flex: "0 0 280px" }}>
+              <div className="mb-7 flex flex-col gap-5 md:flex-row md:items-end md:flex-wrap">
+                <div className="w-full md:w-[280px]">
                   <label htmlFor="islem-referansi" style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Referansı:</label>
                   <input
                     id="islem-referansi"
@@ -722,7 +707,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                   </TabsList>
                 </Tabs>
               </div>
-              <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "nowrap" }}>
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Kaynağı:</label>
                   <select value={islemKaynagi} onChange={(e) => setIslemKaynagi(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
@@ -782,39 +767,40 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
           {hata && <p style={{ color: "#b42318", fontWeight: "bold" }}>{hata}</p>}
 
           {!yukleniyor && !hata && (
-            <form onSubmit={islemYap} style={{ backgroundColor: "white", padding: "20px", margin: "10px", borderRadius: "8px", border: "1px solid #e0e0e0", display: "flex", flexDirection: "column" }}>
-              <div className="ads" style={{ display: "flex", flexDirection: "row", gap: "20px" }}>
-                <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", width: "40%", flexDirection: "column", gap: "20px" }}>
+            <form onSubmit={islemYap} className="flex min-w-0 flex-col rounded-xl border border-[#e0e0e0] bg-white p-4 shadow-sm sm:p-5">
+              <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(300px,0.6fr)_minmax(0,1.4fr)]">
+                <div className="min-w-0 rounded-lg border border-[#e0e0e0] bg-white p-4 sm:p-5">
                   <h1 style={{ fontWeight: "bold", color: "#0047b3" }}>Kur Bilgisi</h1>
-                  <div style={{ display: "flex", flexDirection: "row", gap: "10px", borderRadius: "4px", padding: "10px" }}>
-                    <h3 style={{ width: "50%" }}>Kur Alış</h3>
-                    <h3 style={{ width: "50%" }}>Kur Satış</h3>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "row", gap: "10px", borderRadius: "4px", padding: "10px" }}>
+                  <div className="grid gap-2 rounded p-2.5 sm:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                      Kur Alış
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          alinacakDoviz && kurlar.length > 0
+                            ? `${alinacakDoviz} Alış: ${alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizAlis?.toFixed(4) || '—'}`
+                            : ''
+                        }
+                        className="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-normal"
+                      />
+                    </label>
 
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        alinacakDoviz && kurlar.length > 0
-                          ? `${alinacakDoviz} Alış: ${alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizAlis?.toFixed(4) || '—'}`
-                          : ''
-                      }
-                      style={{ width: "50%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
-                    />
-
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        odenecekDoviz && kurlar.length > 0
-                          ? `${odenecekDoviz} Satış: ${odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizSatis?.toFixed(4) || '—'}`
-                          : ''
-                      }
-                      style={{ width: "50%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
-                    />
+                    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                      Kur Satış
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          odenecekDoviz && kurlar.length > 0
+                            ? `${odenecekDoviz} Satış: ${odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizSatis?.toFixed(4) || '—'}`
+                            : ''
+                        }
+                        className="h-11 w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-normal"
+                      />
+                    </label>
                   </div>
-                  <div className="p-8">
+                  <div className="p-2 sm:p-4">
                     <Table>
                       <TableCaption>Güncel Döviz Kurları</TableCaption>
                       <TableHeader>
@@ -822,7 +808,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           <TableHead className="w-[100px]">Para Birimi</TableHead>
                           <TableHead>Alış</TableHead>
                           <TableHead>Satış</TableHead>
-                          <TableHead className="text-right">Durum</TableHead>
+                          <TableHead className="hidden text-right sm:table-cell">Durum</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -835,7 +821,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                             <TableCell>
                               {alinacakDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === alinacakDoviz)?.dovizSatis?.toFixed(4) || '—'}
                             </TableCell>
-                            <TableCell className="text-right text-green-500">Stabil</TableCell>
+                            <TableCell className="hidden text-right text-green-500 sm:table-cell">Stabil</TableCell>
                           </TableRow>
                         )}
                         {odenecekDoviz && kurlar.length > 0 && alinacakDoviz !== odenecekDoviz && (
@@ -847,18 +833,18 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                             <TableCell>
                               {odenecekDoviz === "TRY" ? "1.0000" : kurlar.find(k => k.kod === odenecekDoviz)?.dovizSatis?.toFixed(4) || '—'}
                             </TableCell>
-                            <TableCell className="text-right text-red-500">Stabil</TableCell>
+                            <TableCell className="hidden text-right text-red-500 sm:table-cell">Stabil</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
-                  <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0", height: "100%" }}>
+                <div className="flex min-w-0 flex-col gap-5">
+                  <div className="h-full min-w-0 rounded-lg border border-[#e0e0e0] bg-white p-4 sm:p-5">
                     <h3 style={{ fontWeight: "bold", color: "#0047b3", marginBottom: "15px" }}>Borçlu Bilgisi</h3>
-                    <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginBottom: "10px" }}>
-                      <div style={{ width: "15%" }}>
+                    <div className="mb-3 grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
+                      <div>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Şube Kodu</label>
                         <input
                           type="text" readOnly
@@ -866,7 +852,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                         />
                       </div>
-                      <div style={{ width: "85%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Şube Adı</label>
                         <input
                           type="text" readOnly
@@ -875,8 +861,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         />
                       </div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "row", gap: "10px"}}>
-                      <div style={{ width: "30%" }}>
+                    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1.1fr)_minmax(100px,.55fr)_minmax(180px,1fr)_minmax(160px,1fr)]">
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Borçlu Hesap</label>
                         <MusteriCombobox
                           value={borçluHesap}
@@ -885,7 +871,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           }
                         />
                       </div>
-                      <div style={{ width: "12%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Ek No</label>
                         <select
                           value={secilenEkNo}
@@ -901,7 +887,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           ))}
                         </select>
                       </div>
-                      <div style={{ width: "28%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Müşteri Adı Soyadı</label>
                         <input
                           type="text" readOnly
@@ -909,7 +895,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                         />
                       </div>
-                      <div style={{ width: "30%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Bakiye</label>
                         <input
                           type="text"
@@ -931,10 +917,10 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                     )}
                   </div>
 
-                  <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "8px", border: "1px solid #e0e0e0" }}>
+                  <div className="min-w-0 rounded-lg border border-[#e0e0e0] bg-white p-4 sm:p-5">
                     <h3 style={{ fontWeight: "bold", color: "#0047b3", marginBottom: "15px" }}>Alacaklı Bilgisi</h3>
-                    <div style={{ display: "flex", flexDirection: "row", gap: "10px", marginBottom: "10px" }}>
-                      <div style={{ width: "15%" }}>
+                    <div className="mb-3 grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
+                      <div>
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Şube Kodu</label>
                         <input
                           type="text" readOnly
@@ -942,7 +928,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                         />
                       </div>
-                      <div style={{ width: "85%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Şube Adı</label>
                         <input
                           type="text" readOnly
@@ -951,8 +937,8 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         />
                       </div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                      <div style={{ width: "30%" }}>
+                    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1.1fr)_minmax(100px,.55fr)_minmax(180px,1fr)_minmax(160px,1fr)]">
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Alacaklı Hesap</label>
                         <input
                           type="text"
@@ -961,7 +947,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                         />
                       </div>
-                      <div style={{ width: "12%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Ek No</label>
                         <select
                           value={alacakliHesapId}
@@ -977,7 +963,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           ))}
                         </select>
                       </div>
-                      <div style={{ width: "28%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Müşteri Adı Soyadı</label>
                         <input
                           type="text" readOnly
@@ -985,7 +971,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
                         />
                       </div>
-                      <div style={{ width: "30%" }}>
+                      <div className="min-w-0">
                         <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "12px" }}>Bakiye</label>
                         <input
                           type="text"
@@ -1004,19 +990,18 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
-                <button type="button" onClick={formTemizle} style={{ padding: "10px 20px", backgroundColor: "#f0f0f0", color: "#333", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={formTemizle} className="w-full sm:w-auto" style={{ padding: "10px 20px", backgroundColor: "#f0f0f0", color: "#333", border: "none", borderRadius: "4px", cursor: "pointer" }}>
                   İptal
                 </button>
-                <button type="submit" style={{ padding: "10px 20px", backgroundColor: "#0047b3", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
+                <button type="submit" className="w-full sm:w-auto" style={{ padding: "10px 20px", backgroundColor: "#0047b3", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
                   İşlemi Gerçekleştir
                 </button>
               </div>
             </form>
 
           )}
-        </main>
       </div>
-    </SidebarProvider>
+    </AppShell>
   );
 }

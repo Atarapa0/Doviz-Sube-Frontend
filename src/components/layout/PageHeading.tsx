@@ -13,7 +13,7 @@ export default function PageHeading({ title, description, icon: Icon }: PageHead
         <span className="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-[#0047b3]">
           <Icon className="size-5" />
         </span>
-        <h1 className="text-2xl font-bold text-[#0047b3]">{title}</h1>
+        <h1 className="text-xl font-bold text-[#0047b3] sm:text-2xl">{title}</h1>
       </div>
       <p className="max-w-3xl text-sm text-slate-500">{description}</p>
     </div>

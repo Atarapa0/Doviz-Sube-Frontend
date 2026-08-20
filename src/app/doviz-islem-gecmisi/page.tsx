@@ -199,7 +199,16 @@ export default function DovizIslemGecmisiPage() {
         </section>
 
         {(detayYukleniyor || detayHatasi || detay) && (
-          <section role="dialog" aria-modal="false" aria-labelledby="islem-detay-basligi" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-0 backdrop-blur-[2px] sm:p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setDetay(null);
+                setDetayHatasi("");
+              }
+            }}
+          >
+          <section role="dialog" aria-modal="true" aria-labelledby="islem-detay-basligi" className="h-svh max-h-svh w-full max-w-5xl overflow-y-auto bg-white p-4 shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div><h2 id="islem-detay-basligi" className="text-xl font-bold text-slate-900">İşlem Detayı</h2>{detay && <p className="mt-1 font-mono text-sm text-[#0047b3]">{detay.islem.referansNo}</p>}</div>
               <button type="button" onClick={() => { setDetay(null); setDetayHatasi(""); }} aria-label="İşlem detayını kapat" className="rounded-md p-2 text-slate-500 hover:bg-slate-100"><X className="size-5" /></button>
@@ -216,7 +225,15 @@ export default function DovizIslemGecmisiPage() {
                 </div>
                 <div>
                   <h3 className="mb-3 font-bold text-slate-900">Hesap hareketleri</h3>
-                  <div className="overflow-x-auto rounded-lg border border-slate-200"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-slate-600"><tr><th className="px-4 py-3">Hareket</th><th className="px-4 py-3">Hesap</th><th className="px-4 py-3">Döviz miktarı</th><th className="px-4 py-3">TL karşılığı</th><th className="px-4 py-3">Tarih</th></tr></thead><tbody className="divide-y divide-slate-100">{detay.hesapHareketleri.map((hareket) => {
+                  <div className="grid gap-3 sm:hidden">
+                    {detay.hesapHareketleri.map((hareket) => {
+                      const borcMu = hareket.hareketTuru === "BORC";
+                      const hesap = borcMu ? detay.islem.borcluHesap : detay.islem.alacakliHesap;
+                      return <div key={hareket.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"><div className="flex items-center justify-between gap-3"><strong className={borcMu ? "text-red-700" : "text-emerald-700"}>{hareket.hareketTuru}</strong><span className="text-xs text-slate-500">Ek No {hesap.hesapEkNo}</span></div><p className="mt-3 font-bold">{paraYaz(hareket.dovizMiktari, hesap.dovizKodu)}</p><p className="mt-1 text-xs text-slate-500">TL karşılığı: {paraYaz(hareket.tlKarsiligi)}</p><p className="mt-1 text-xs text-slate-500">{tarihYaz(hareket.islemTarihi)}</p></div>;
+                    })}
+                    {detay.hesapHareketleri.length === 0 && <p className="rounded-lg border border-slate-200 p-6 text-center text-sm text-slate-500">Hesap hareketi bulunamadı.</p>}
+                  </div>
+                  <div className="hidden overflow-x-auto rounded-lg border border-slate-200 sm:block"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-slate-600"><tr><th className="px-4 py-3">Hareket</th><th className="px-4 py-3">Hesap</th><th className="px-4 py-3">Döviz miktarı</th><th className="px-4 py-3">TL karşılığı</th><th className="px-4 py-3">Tarih</th></tr></thead><tbody className="divide-y divide-slate-100">{detay.hesapHareketleri.map((hareket) => {
                     const borcMu = hareket.hareketTuru === "BORC";
                     const hesap = borcMu ? detay.islem.borcluHesap : detay.islem.alacakliHesap;
                     return <tr key={hareket.id}><td className="px-4 py-3 font-semibold">{hareket.hareketTuru}</td><td className="px-4 py-3">Ek No {hesap.hesapEkNo}</td><td className="px-4 py-3">{paraYaz(hareket.dovizMiktari, hesap.dovizKodu)}</td><td className="px-4 py-3">{paraYaz(hareket.tlKarsiligi)}</td><td className="px-4 py-3">{tarihYaz(hareket.islemTarihi)}</td></tr>;
@@ -243,6 +260,7 @@ export default function DovizIslemGecmisiPage() {
               </div>
             )}
           </section>
+          </div>
         )}
       </div>
     </AppShell>

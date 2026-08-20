@@ -66,7 +66,7 @@ export default function SubeCombobox({
       </button>
 
       {acik && (
-        <div className="absolute z-50 mt-2 w-full min-w-[320px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+        <div className="absolute z-50 mt-2 w-full min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:min-w-[320px]">
           <div className="relative border-b border-slate-100 p-2">
             <Search className="absolute left-5 top-5 size-4 text-slate-400" />
             <input

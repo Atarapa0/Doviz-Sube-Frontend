@@ -22,6 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useMusteri } from "@/components/providers/MusteriProvider";
 
@@ -39,6 +40,7 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { secilenMusteri } = useMusteri();
   const secilenSube = secilenMusteri
     ? `${secilenMusteri.sube.kod} - ${secilenMusteri.sube.ad}`
@@ -46,7 +48,7 @@ export default function Sidebar() {
 
   return (
     <ShadcnSidebar
-      collapsible="none"
+      collapsible="offcanvas"
       className="min-h-screen border-r border-[#e0e0e0] bg-[#f4f6f8] text-black"
     >
       <SidebarHeader className="bg-[#f4f6f8] p-5 pb-3">
@@ -71,6 +73,9 @@ export default function Sidebar() {
                     <SidebarMenuButton
                       render={<Link href={item.href} />}
                       isActive={isActive}
+                      onClick={() => {
+                        if (isMobile) setOpenMobile(false);
+                      }}
                       className="h-10 rounded-md px-3 text-sm text-black hover:bg-slate-200 hover:text-black data-[active=true]:bg-[#0047b3] data-[active=true]:text-white data-[active=true]:hover:bg-[#0047b3] data-[active=true]:hover:text-white"
                     >
                       <Icon className="size-4" />

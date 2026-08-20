@@ -148,7 +148,7 @@ export default function SubeDetayPopup({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-0 backdrop-blur-[2px] sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -157,10 +157,10 @@ export default function SubeDetayPopup({
         role="dialog"
         aria-modal="true"
         aria-labelledby="sube-detay-baslik"
-        className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="flex h-svh max-h-svh w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl"
       >
-        <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <div>
+        <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="min-w-0">
             <h2
               id="sube-detay-baslik"
               className="flex items-center gap-2 text-lg font-bold text-slate-900"
@@ -172,6 +172,7 @@ export default function SubeDetayPopup({
             </p>
           </div>
           <Button
+            className="shrink-0"
             type="button"
             variant="ghost"
             size="icon"
@@ -182,7 +183,7 @@ export default function SubeDetayPopup({
           </Button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50 p-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50 p-3 sm:p-6">
           {detayYukleniyor && (
             <p className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
               Şube detayı yükleniyor...
@@ -194,7 +195,7 @@ export default function SubeDetayPopup({
             </p>
           )}
           {!detayYukleniyor && sube && (
-            <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+            <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
               <div>
                 <span className="text-xs text-slate-500">Şube kodu</span>
                 <p className="mt-1 text-lg font-bold text-[#0047b3]">
@@ -281,11 +282,11 @@ export default function SubeDetayPopup({
               )}
             </div>
 
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4 text-sm">
+            <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <span className="text-slate-500">
                 Sayfa {sayfa}/{toplamSayfa}
               </span>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex">
                 <button
                   type="button"
                   disabled={sayfa <= 1 || musterilerYukleniyor}

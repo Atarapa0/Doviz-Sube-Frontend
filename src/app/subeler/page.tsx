@@ -50,7 +50,7 @@ export default function SubelerPage() {
           />
           <Link
             href="/yeni-sube"
-            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95]"
+            className="flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-md bg-[#0047b3] px-5 text-sm font-semibold text-white hover:bg-[#003b95] sm:w-auto"
           >
             <Plus className="size-4" />
             Yeni Şube Ekle
