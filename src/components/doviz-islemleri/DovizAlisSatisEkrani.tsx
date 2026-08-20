@@ -16,6 +16,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MusteriCombobox from "@/components/ui/musteri-bilgileri";
 import { ArrowRightLeft, Banknote, WalletCards } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -204,6 +205,39 @@ function miktariYaz(value: number) {
   return Number(value.toFixed(4)).toString();
 }
 
+function miktarGirdisiniNormalizeEt(value: string) {
+  const temizDeger = value.replace(/\s/g, "").replace(/[^\d.,]/g, "");
+
+  if (!temizDeger) return "";
+
+  const standartDeger = temizDeger.includes(",")
+    ? temizDeger.replace(/\./g, "").replace(",", ".")
+    : temizDeger;
+  const [tamKisim, ...ondalikParcalari] = standartDeger.split(".");
+  const ondalikKisim = ondalikParcalari.join("").slice(0, 4);
+  const normalizeTamKisim = tamKisim.replace(/^0+(?=\d)/, "") || "0";
+
+  return standartDeger.includes(".")
+    ? `${normalizeTamKisim}.${ondalikKisim}`
+    : normalizeTamKisim;
+}
+
+function miktariTurkceGoster(value: string) {
+  if (!value) return "";
+
+  const sayi = Number(value);
+  if (!Number.isFinite(sayi)) return value;
+
+  const ondalikBasamakSayisi = value.includes(".")
+    ? Math.min(value.split(".")[1]?.length ?? 0, 4)
+    : 0;
+
+  return new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: ondalikBasamakSayisi,
+    maximumFractionDigits: 4,
+  }).format(sayi);
+}
+
 function bakiyeYaz(value: number, dovizKodu: string) {
   return `${new Intl.NumberFormat("tr-TR", {
     minimumFractionDigits: 2,
@@ -227,6 +261,7 @@ function referansOnizlemesiOlustur(subeKodu: string, islemTipi: string) {
 }
 
 export function DovizAlisSatisEkrani() {
+  const router = useRouter();
   const { musteriSec: headerMusteriSec } = useMusteri();
   const [dovizler, setDovizler] = useState<Doviz[]>([]);
   const [kurlar, setKurlar] = useState<Kur[]>([]); 
@@ -234,7 +269,7 @@ export function DovizAlisSatisEkrani() {
   const [kurTarihi, setKurTarihi] = useState("");
   const [dovizFormu, dovizFormDispatch] = useReducer(
     dovizFormReducer,
-    initialDovizFormState,
+    { ...initialDovizFormState, odenecekDoviz: "TRY" },
   );
   const {
     alinacakDoviz,
@@ -244,8 +279,10 @@ export function DovizAlisSatisEkrani() {
     sonMiktarAlani,
     hesaplamaHatasi,
   } = dovizFormu;
-  const [islemKaynagi, setIslemKaynagi] = useState("");
   const [islemTipi, setIslemTipi] = useState("satis");
+  const [odaktakiMiktar, setOdaktakiMiktar] = useState<
+    "alinacak" | "odenecek" | null
+  >(null);
   const [gercekReferans, setGercekReferans] = useState("");
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState("");
@@ -368,13 +405,48 @@ export function DovizAlisSatisEkrani() {
   }
 
   function alinacakMiktariDegistir(yeniMiktar: string) {
-    dovizFormDispatch({ type: "ALINACAK_MIKTAR_GIR", payload: yeniMiktar });
-    karsiligiGuncelle("alinacak", yeniMiktar);
+    const normalizeMiktar = miktarGirdisiniNormalizeEt(yeniMiktar);
+    dovizFormDispatch({
+      type: "ALINACAK_MIKTAR_GIR",
+      payload: normalizeMiktar,
+    });
+    karsiligiGuncelle("alinacak", normalizeMiktar);
   }
 
   function odenecekMiktariDegistir(yeniMiktar: string) {
-    dovizFormDispatch({ type: "ODENECEK_MIKTAR_GIR", payload: yeniMiktar });
-    karsiligiGuncelle("odenecek", yeniMiktar);
+    const normalizeMiktar = miktarGirdisiniNormalizeEt(yeniMiktar);
+    dovizFormDispatch({
+      type: "ODENECEK_MIKTAR_GIR",
+      payload: normalizeMiktar,
+    });
+    karsiligiGuncelle("odenecek", normalizeMiktar);
+  }
+
+  function islemTipiniDegistir(yeniIslemTipi: string) {
+    if (yeniIslemTipi === "arbitraj") {
+      router.push("/arbitraj");
+      return;
+    }
+
+    setGercekReferans("");
+    setIslemTipi(yeniIslemTipi);
+    setOdaktakiMiktar(null);
+    dovizFormDispatch({ type: "FORMU_TEMIZLE" });
+
+    if (yeniIslemTipi === "alis") {
+      dovizFormDispatch({ type: "ALINACAK_DOVIZ_DEGISTIR", payload: "TRY" });
+      setSecilenEkNo("");
+      setAlacakliHesapId(
+        dovizeUygunHesapAnahtari("TRY", tumHesaplar, ""),
+      );
+      return;
+    }
+
+    dovizFormDispatch({ type: "ODENECEK_DOVIZ_DEGISTIR", payload: "TRY" });
+    setSecilenEkNo(
+      dovizeUygunHesapAnahtari("TRY", tumHesaplar, ""),
+    );
+    setAlacakliHesapId("");
   }
 
   function hesapCevabiniStateIcineYaz(hesapCevabi: HesapResponse) {
@@ -489,9 +561,10 @@ export function DovizAlisSatisEkrani() {
     setSubeAdi(hesap.subeAdi);
     setHesapAramaMesaji("");
 
+    const yeniOdenecekDoviz = islemTipi === "satis" ? "TRY" : hesap.dovizKodu;
     dovizFormDispatch({
       type: "ODENECEK_DOVIZ_DEGISTIR",
-      payload: hesap.dovizKodu,
+      payload: yeniOdenecekDoviz,
     });
     const kaynakMiktar =
       sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
@@ -499,7 +572,7 @@ export function DovizAlisSatisEkrani() {
       sonMiktarAlani,
       kaynakMiktar,
       alinacakDoviz,
-      hesap.dovizKodu,
+      yeniOdenecekDoviz,
     );
   }
 
@@ -512,25 +585,33 @@ export function DovizAlisSatisEkrani() {
 
     if (!hesap) return;
 
+    const yeniAlinacakDoviz = islemTipi === "alis" ? "TRY" : hesap.dovizKodu;
     dovizFormDispatch({
       type: "ALINACAK_DOVIZ_DEGISTIR",
-      payload: hesap.dovizKodu,
+      payload: yeniAlinacakDoviz,
     });
     const kaynakMiktar =
       sonMiktarAlani === "alinacak" ? alinacakMiktar : odenecekMiktar;
     karsiligiGuncelle(
       sonMiktarAlani,
       kaynakMiktar,
-      hesap.dovizKodu,
+      yeniAlinacakDoviz,
       odenecekDoviz,
     );
   }
 
   function formTemizle() {
     dovizFormDispatch({ type: "FORMU_TEMIZLE" });
+    dovizFormDispatch({
+      type:
+        islemTipi === "alis"
+          ? "ALINACAK_DOVIZ_DEGISTIR"
+          : "ODENECEK_DOVIZ_DEGISTIR",
+      payload: "TRY",
+    });
     publicDegiskenler.islemReferansi = "";
     setGercekReferans("");
-    setIslemTipi("");
+    setOdaktakiMiktar(null);
     setBorçluHesap("");
     setMusteriAdi("");
     setSubeKodu("");
@@ -640,6 +721,16 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
     tumHesaplar,
     alacakliHesapId,
   );
+  const borcluHesapSecenekleri = ekNolariDropdown.filter((hesap) =>
+    islemTipi === "satis"
+      ? hesap.dovizKodu === "TRY"
+      : hesap.dovizKodu !== "TRY",
+  );
+  const alacakliHesapSecenekleri = hesaplar.filter((hesap) =>
+    islemTipi === "alis"
+      ? hesap.dovizKodu === "TRY"
+      : hesap.dovizKodu !== "TRY",
+  );
 
   return (
     <AppShell>
@@ -674,10 +765,7 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
                 <Tabs
                   value={islemTipi}
-                  onValueChange={(yeniIslemTipi) => {
-                    setGercekReferans("");
-                    setIslemTipi(yeniIslemTipi);
-                  }}
+                  onValueChange={islemTipiniDegistir}
                   className="w-full md:w-auto"
                 >
                   <TabsList className="grid h-auto w-full grid-cols-3 gap-2 bg-transparent p-0 group-data-horizontal/tabs:h-auto md:w-[450px]">
@@ -710,18 +798,21 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
               <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>İşlem Kaynağı:</label>
-                  <select value={islemKaynagi} onChange={(e) => setIslemKaynagi(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
-                    <option value="">Seçiniz</option>
-                    <option value="tl-hesaptan">TL Hesaptan</option>
-                    <option value="yp-hesaptan">YP Hesaptan</option>
-                    <option value="nakit">Nakit</option>
-                  </select>
+                  <input
+                    type="text"
+                    readOnly
+                    value="Hesaptan Hesaba"
+                    style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "#f5f5f5" }}
+                  />
                 </div>
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Alınacak Döviz Cinsi:</label>
-                  <select value={alinacakDoviz} onChange={(e) => alinacakDoviziDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                  <select value={alinacakDoviz} onChange={(e) => alinacakDoviziDegistir(e.target.value)} disabled={islemTipi === "alis"} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: islemTipi === "alis" ? "#f5f5f5" : "white" }} required>
                     <option value="">Seçiniz</option>
-                    {dovizler.map((doviz) => (
+                    {islemTipi === "alis" && !dovizler.some((doviz) => doviz.kod === "TRY") && (
+                      <option value="TRY">TRY - Türk Lirası</option>
+                    )}
+                    {dovizler.filter((doviz) => islemTipi === "alis" ? doviz.kod === "TRY" : doviz.kod !== "TRY").map((doviz) => (
                       <option key={doviz.id} value={doviz.kod}>
                         {doviz.kod} - {doviz.name}
                       </option>
@@ -731,9 +822,12 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Döviz Cinsi:</label>
-                  <select value={odenecekDoviz} onChange={(e) => odenecekDoviziDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required>
+                  <select value={odenecekDoviz} onChange={(e) => odenecekDoviziDegistir(e.target.value)} disabled={islemTipi === "satis"} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: islemTipi === "satis" ? "#f5f5f5" : "white" }} required>
                     <option value="">Seçiniz</option>
-                    {dovizler.map((doviz) => (
+                    {islemTipi === "satis" && !dovizler.some((doviz) => doviz.kod === "TRY") && (
+                      <option value="TRY">TRY - Türk Lirası</option>
+                    )}
+                    {dovizler.filter((doviz) => islemTipi === "satis" ? doviz.kod === "TRY" : doviz.kod !== "TRY").map((doviz) => (
                       <option key={doviz.id} value={doviz.kod}>
                         {doviz.kod} - {doviz.name}
                       </option>
@@ -744,12 +838,12 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
 
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Alınacak Miktar:</label>
-                  <input type="number" min="0" step="any" value={alinacakMiktar} onChange={(e) => alinacakMiktariDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
+                  <input type="text" inputMode="decimal" value={odaktakiMiktar === "alinacak" ? alinacakMiktar : miktariTurkceGoster(alinacakMiktar)} onFocus={() => setOdaktakiMiktar("alinacak")} onBlur={() => setOdaktakiMiktar(null)} onChange={(e) => alinacakMiktariDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
                 </div>
 
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Ödenecek Miktar:</label>
-                  <input type="number" min="0" step="any" value={odenecekMiktar} onChange={(e) => odenecekMiktariDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
+                  <input type="text" inputMode="decimal" value={odaktakiMiktar === "odenecek" ? odenecekMiktar : miktariTurkceGoster(odenecekMiktar)} onFocus={() => setOdaktakiMiktar("odenecek")} onBlur={() => setOdaktakiMiktar(null)} onChange={(e) => odenecekMiktariDegistir(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }} required />
                 </div>
 
               </div>
@@ -876,11 +970,11 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <select
                           value={secilenEkNo}
                           onChange={(e) => hesapSec(e.target.value)}
-                          disabled={ekNolariDropdown.length === 0}
+                          disabled={borcluHesapSecenekleri.length === 0}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "white" }}
                         >
                           <option value="">Seçiniz</option>
-                          {ekNolariDropdown.map((hesap) => (
+                          {borcluHesapSecenekleri.map((hesap) => (
                             <option key={hesap.hesapAnahtari} value={hesap.hesapAnahtari}>
                               {hesap.hesapEkNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)} - {hesap.musteriAdi} {hesap.musteriSoyadi}
                             </option>
@@ -952,11 +1046,11 @@ async function islemYap(event: FormEvent<HTMLFormElement>) {
                         <select
                           value={alacakliHesapId}
                           onChange={(e) => alacakliHesapSec(e.target.value)}
-                          disabled={hesaplar.length === 0}
+                          disabled={alacakliHesapSecenekleri.length === 0}
                           style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ccc", backgroundColor: "white" }}
                         >
                           <option value="">Seçiniz</option>
-                          {hesaplar.map((hesap) => (
+                          {alacakliHesapSecenekleri.map((hesap) => (
                             <option key={hesap.hesapAnahtari} value={hesap.hesapAnahtari}>
                               {hesap.hesapEkNo} - {hesap.dovizKodu} - Bakiye: {bakiyeYaz(hesap.bakiye, hesap.dovizKodu)}
                             </option>

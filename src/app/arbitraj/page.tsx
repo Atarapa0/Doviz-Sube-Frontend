@@ -26,9 +26,25 @@ export default function ArbitrajPage() {
   const [mesaj, setMesaj] = useState("");
   const [basarili, setBasarili] = useState(false);
   const [isleniyor, setIsleniyor] = useState(false);
+  const [musteriGirildiMesaji, setMusteriGirildiMesaji] = useState("");
   const hesaplamaIstekIdRef = useRef(0);
+  const musteriMesajiZamanlayiciRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (musteriMesajiZamanlayiciRef.current !== null) {
+        window.clearTimeout(musteriMesajiZamanlayiciRef.current);
+      }
+    };
+  }, []);
 
   async function musteriGetir(id: string) {
+    if (musteriMesajiZamanlayiciRef.current !== null) {
+      window.clearTimeout(musteriMesajiZamanlayiciRef.current);
+      musteriMesajiZamanlayiciRef.current = null;
+    }
+
+    setMusteriGirildiMesaji("");
     setMusteriId(id);
     setMusteri(null);
     setBorcluEkNo("");
@@ -46,6 +62,11 @@ export default function ArbitrajPage() {
       const data = await musteriHesaplariniGetir(id);
       setMusteri(data);
       musteriSec(data);
+      setMusteriGirildiMesaji("Müşteri numarası girildi.");
+      musteriMesajiZamanlayiciRef.current = window.setTimeout(() => {
+        setMusteriGirildiMesaji("");
+        musteriMesajiZamanlayiciRef.current = null;
+      }, 2500);
     } catch (error) {
       setMesaj(error instanceof Error ? error.message : "Müşteri bulunamadı.");
     }
@@ -178,6 +199,11 @@ export default function ArbitrajPage() {
                 value={musteriId}
                 onValueChange={(id) => void musteriGetir(id)}
               />
+              {musteriGirildiMesaji && (
+                <span className="text-xs font-semibold text-emerald-700">
+                  {musteriGirildiMesaji}
+                </span>
+              )}
             </label>
 
             <label className="flex flex-col gap-2 text-sm font-semibold">

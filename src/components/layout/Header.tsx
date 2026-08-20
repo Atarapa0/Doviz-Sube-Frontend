@@ -58,9 +58,7 @@ export default function Header() {
     <header className="flex min-h-20 min-w-0 flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:gap-4 sm:px-5 md:px-8">
       <div className="flex shrink-0 items-center gap-2">
         <SidebarTrigger className="md:hidden" aria-label="Menüyü aç" />
-        <span className="hidden rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:inline-flex">
-          ID: 4892-XT
-        </span>
+        
       </div>
 
       <div className="relative order-3 w-full lg:order-none lg:mx-auto lg:max-w-md">
